@@ -1,0 +1,16 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{tikz}
+\usepackage{pgfplots}
+
+\begin{tikzpicture}
+\begin{axis}[]
+\addplot[domain=0:2,
+samples=100,
+color=red,
+]
+{x^2};
+\addlegendentry{test_name}
+\end{axis}$
+\end{tikzpicture}
+\end{document}
