@@ -1,11 +1,44 @@
 import os
 
-packages = [('fontenc', 'T1'), ('inputenc', 'utf8'), 'lmodern', 'textcomp']
 list_types = {'numbered': 'enumerate', 'bullet': 'itemize'}
 
 
+class __main:
+    def __init__(self, Packages: list = None):
+        self.packages = Packages if Packages else []
+
+    def add_super(self, new_packages: list):
+        for i in new_packages:
+            self.packages.append(i) if i not in self.packages else None
+
+    def transfer_packages(self):
+        return self.packages
+
+    def generate_Tex(self):
+        pass
+
+
+class _section:
+    def __init__(self, title: str):
+        self.title = title
+        self.items = []
+        self.preamble = []
+
+    def add(self, item):
+        self.items.append(item)
+        for i in item.packages:
+            self.preamble.append(i)
+
+    def generate_TeX(self):
+        out = f'\\section{{{self.title}}}'
+        for i in self.items:
+            out += i.generate_TeX()
+
+        return out
+
+
 class Document:
-    def __init__(self, title: str = None, author: str = None, top: str = None, bottom: str = None, left: str = None, right: str = None):
+    def __init__(self, title: str = None, author: str = None, first_section: str = 'Introduction', top: str = None, bottom: str = None, left: str = None, right: str = None):
         self.title = title
         self.author = author
         self.top = top
@@ -13,22 +46,28 @@ class Document:
         self.left = left
         self.right = right
         self.contains = []
+        self.__currentSection = _section(first_section)
+        self.__preamble = [('fontenc', 'T1'), ('inputenc', 'utf8'), 'lmodern', 'textcomp']
 
     def generate_TeX(self):
+        if self.contains is []:
+            if self.__currentSection.items is []:
+                print("Nothing to generate in the file!")
+            else:
+                self.contains = self.__currentSection.items
         out = '\\documentclass{article}\n'
 
         for i in self.contains:
-            try:
-                temp_packages = i.preamble()
-                for n in temp_packages:
-                    out += self.add_package(n)
-            except AttributeError:
-                pass
+            for n in i.preamble:
+                self.__preamble.append(n) if n not in self.__preamble else None
 
-        for i in packages:
-            out += self.add_package(i)
+        for i in self.__preamble:
+            out += self.__add_package(i)
 
-        out += self.add_package('geometry')
+        if 'pfgplots' in self.__preamble:
+            out += '\\pgfplotsset{compat=newest}'
+
+        out += self.__add_package('geometry')
         out += '\\geometry{'
         out += f'\ntop={self.top},' if self.top else ''
         out += f'\nbottom={self.bottom},' if self.bottom else ''
@@ -36,7 +75,6 @@ class Document:
         out += f'\nright={self.right},' if self.right else ''
         out += '}\n'
 
-        out += '\\pgfplotsset{compat=newest}'
         out += '\n'
         out += f'\n\\title{{{self.title}}}\n\\date{{}}' if self.title else ''
         out += f'\n\\author{{{self.author}}}' if self.author else ''
@@ -48,17 +86,20 @@ class Document:
 
         out += '\\end{document}'
 
-        katex = open("basic.tex", "w+")
+        katex = open(f'{self.title}.tex', "w+")
         katex.truncate()
         katex = katex.write(out)
 
-        # os.system(f'pdflatex -jobname=\"{self.title}\" basic.tex >/dev/null')
-        os.system(f'pdflatex basic.tex >/dev/null')
+        os.system(f'pdflatex -jobname=\"{self.title}\" \"{self.title}.tex\" >/dev/null')
 
     def add(self, item):
-        self.contains.append(item)
+        self.__currentSection.add(item)
 
-    def add_package(self, package: str or tuple):
+    def new_section(self, title: str):
+        self.contains.append(self.__currentSection)
+        self.__currentSection = _section(title)
+
+    def __add_package(self, package: str or tuple):
         out = '\\usepackage'
         if type(package) is tuple:
             out += f'[{package[1]}]{{{package[0]}}}'
@@ -67,17 +108,14 @@ class Document:
         return out + '\n'
 
 
-# class Header:
-#     def __init__(self):
-
-
-class Text:
-    def __init__(self, text: str, align: str = None):
-        self.text = text
+class Text(__main):
+    def __init__(self, *args, align: str = None):
+        self.text = ''
+        for arg in args:
+            if type(arg) is str:
+                self.text += f'{arg} '
         self.align = align
-
-    def preamble(self):
-        return ['ragged2e'] if self.align in ['left', 'right'] else ''
+        super().__init__(['ragged2e']) if self.align is not None else super().__init__()
 
     def generate_TeX(self):
         out = ''
@@ -93,54 +131,42 @@ class Text:
         return f'Text > [\"{self.text}\", align > {self.align} ]'
 
 
-class vEnv:
-    def __init__(self, _type: str = ''):
-        self.type = _type
-
-    def generate_Tex(self, extra: str = ''):
-        out = f'\\begin{{{self.type}}}\n'
-
-        out += extra
-
-        out += f'\\end{{{self.type}}}\n'
-
-        return out
-
-
-class Equation(vEnv):
+class Equation(__main):
     def __init__(self, equation: str = ''):
-        super().__init__('equation')
+        super().__init__()
         self.equation = equation
 
     def generate_Tex(self):
-        out = super().generate_Tex(self.equation)
+        out = '\\begin{equation}\n'
+        out += self.equation
+        out += '\\end{equation}\n'
 
         return out
 
 
-class List(vEnv):
+class List(__main):
     def __init__(self, list_type: str = 'numbered', items: list = []):
-        super().__init__(list_types.get(list_type))
+        super().__init__()
+        self.list_type = list_types.get(list_type)
         self.items = items
-        self.clear_list() if items is not [] else None
+        self.__clear_list() if items is not [] else None
 
-    def clear_list(self):
+    def __clear_list(self):
         self.items = []
 
     def add(self, item):
         self.items.append(item)
+        self.add_super(item.packages)
 
     def generate_TeX(self):
-        extra = ''
+        out = f'\\begin{{{self.list_type}}}\n'
         for item in self.items:
-            extra += '\\item '
+            out += '\\item '
             if type(item) is list:
-                extra += Text(str(item))
+                out += Text(str(item))
             else:
-                extra += f'{item.generate_TeX()}\n'
-
-        out = super().generate_Tex(extra)
-
+                out += f'{item.generate_TeX()}\n'
+        out += f'\\end{{{self.list_type}}}\n'
         return out
 
     def __repr__(self):
@@ -151,12 +177,14 @@ class List(vEnv):
         return out
 
 
-class group:
+class group(__main):
     def __init__(self, items: list = []):
+        super().__init__()
         self.items = items
 
     def add(self, item):
         self.items.append(item)
+        self.add_super(item.packages)
 
     def generate_TeX(self):
         out = ''
@@ -165,8 +193,9 @@ class group:
         return out
 
 
-class line:
+class line(__main):
     def __init__(self, coordinates: list, color: str = None, mark: str = None, style: str = None, label_offset: int or float = -0.2):
+        super().__init__()
         self.label_offset = label_offset
         self.coordinates = coordinates
         self.color = color
@@ -174,37 +203,34 @@ class line:
         self.style = style
 
     def generate_TeX(self):
-        self.out = '\\addplot['
-        self.out += f'\ncolor={self.color}, ' if self.color else ''
-        self.out += f'\nmark={self.mark}, ' if self.mark else ''
-        self.out += f'\nstyle={self.style}, ' if self.style else ''
-        self.out += ']\ncoordinates {'
+        out = '\\addplot['
+        out += f'\ncolor={self.color}, ' if self.color else ''
+        out += f'\nmark={self.mark}, ' if self.mark else ''
+        out += f'\nstyle={self.style}, ' if self.style else ''
+        out += ']\ncoordinates {'
         for i in self.coordinates:
-            self.out += f'{i} '
+            out += f'{i} '
 
-        self.out = self.out[:-1]
+        out = self.out[:-1]
 
-        self.axis = (self.coordinates[0][0], 'x') if self.coordinates[0][0] == self.coordinates[1][0] else (self.coordinates[0][1], 'y')
+        Axis = (self.coordinates[0][0], 'x') if self.coordinates[0][0] == self.coordinates[1][0] else (self.coordinates[0][1], 'y')
 
-        self.out += f'}};\n\\node at (axis cs:'
-        self.out += f'{self.axis[0]}, {self.label_offset})' if self.axis[1] == 'x' else f'{self.label_offset}, {self.axis[0]})'
-        self.out += f'{{{self.axis[1]}={self.axis[0]}}};\n'
+        out += f'}};\n\\node at (axis cs:'
+        out += f'{Axis[0]}, {self.label_offset})' if Axis[1] == 'x' else f'{self.label_offset}, {Axis[0]})'
+        out += f'{{{Axis[1]}={Axis[0]}}};\n'
 
-        return self.out
+        return out
 
 
-class plot:
-    def __init__(self, function: str, domain: tuple = None, color = None, name: str = None):
-        super().__init__()
+class plot(__main):
+    def __init__(self, function: str, domain: tuple = None, color=None, name: str = None):
+        super().__init__(['tikz', 'pfgplots'])
         self.function = function
         self.name = name
         self.color = color
         self.domain = domain
 
         self.generate_TeX()
-
-    def preamble(self):
-        return ['tikz', 'pfgplots']
 
     def generate_TeX(self):
         out = f'\\addplot['
@@ -216,8 +242,8 @@ class plot:
         return out
 
 
-class axis:
-    def __init__(self, samples: int = 100, labels: list = [None]*2, minMax: list = [None]*4, showTickMarks: bool = True, clip: bool = False):
+class axis(__main):
+    def __init__(self, samples: int = 100, labels: list = [None] * 2, minMax: list = [None] * 4, showTickMarks: bool = True, clip: bool = False):
         super().__init__()
         self.ymax = minMax[3]
         self.ymin = minMax[2]
