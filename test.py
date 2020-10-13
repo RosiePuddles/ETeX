@@ -1,8 +1,18 @@
-def test_func(a: int or list):
-    if type(a) is int:
-        return "int"
-    if type(a) is list:
-        return "list"
+class test:
+    def __init__(self):
+        self.inc = []
+
+    def add(self, string):
+        self.inc.append(string)
+
+    def __repr__(self):
+        return f'{self.inc}\n'
 
 
-print(test_func([1,2]))
+a = test()
+b = test()
+
+b.add("Test string")
+a.add("AAAAA")
+
+print(f'{a}\n{b}')
