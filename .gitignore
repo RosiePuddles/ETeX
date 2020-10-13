@@ -2,6 +2,7 @@
 *.aux
 *.cfg
 .DS_Store
+test.py
 
 /vEne
 /lib

@@ -1,7 +1,7 @@
 import os
 
-packages = [('fontenc', 'T1'), ('inputenc', 'utf8'), 'lmodern', 'textcomp', 'tikz', 'pgfplots', 'ragged2e']
-list_types = {'numbered': 'enumerate', 'bullet': 'something else'}
+packages = [('fontenc', 'T1'), ('inputenc', 'utf8'), 'lmodern', 'textcomp']
+list_types = {'numbered': 'enumerate', 'bullet': 'itemize'}
 
 
 class Document:
@@ -16,6 +16,15 @@ class Document:
 
     def generate_TeX(self):
         out = '\\documentclass{article}\n'
+
+        for i in self.contains:
+            try:
+                temp_packages = i.preamble()
+                for n in temp_packages:
+                    out += self.add_package(n)
+            except AttributeError:
+                pass
+
         for i in packages:
             out += self.add_package(i)
 
@@ -58,10 +67,17 @@ class Document:
         return out + '\n'
 
 
+# class Header:
+#     def __init__(self):
+
+
 class Text:
     def __init__(self, text: str, align: str = None):
         self.text = text
         self.align = align
+
+    def preamble(self):
+        return ['ragged2e'] if self.align in ['left', 'right'] else ''
 
     def generate_TeX(self):
         out = ''
@@ -186,6 +202,9 @@ class plot:
         self.domain = domain
 
         self.generate_TeX()
+
+    def preamble(self):
+        return ['tikz', 'pfgplots']
 
     def generate_TeX(self):
         out = f'\\addplot['
