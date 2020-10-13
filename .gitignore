@@ -1,6 +1,7 @@
 *.log
 *.aux
 *.cfg
+.DS_Store
 
 /vEne
 /lib
