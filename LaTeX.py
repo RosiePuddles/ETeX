@@ -19,55 +19,45 @@ class __main:
 
 
 class _section:
-    def __init__(self, title: str):
+    def __init__(self, title: str, _type: int = 0):
         self.title = title
         self.items = []
-        self.preamble = []
-
-    def add(self, item):
-        self.items.append(item)
-        for i in item.packages:
-            self.preamble.append(i)
+        self.packages = []
+        self.type = _type
 
     def generate_TeX(self):
-        out = f'\\section{{{self.title}}}'
-        for i in self.items:
-            out += i.generate_TeX()
-
-        return out
+        return f'\\{"sub" * self.type}section{{{self.title}}}\n'
 
 
 class Document:
-    def __init__(self, title: str = None, author: str = None, first_section: str = 'Introduction', top: str = None, bottom: str = None, left: str = None, right: str = None):
+    def __init__(self, title: str = None, subtitle: str = None, author: str = None, top: int = None, bottom: int = None, left: int = None, right: int = None):
         self.title = title
+        self.subtitle = subtitle
         self.author = author
-        self.top = top
-        self.bottom = bottom
-        self.left = left
-        self.right = right
+        self.top = f'{top}mm' if top else None
+        self.bottom = f'{bottom}mm' if bottom else None
+        self.left = f'{left}mm' if left else None
+        self.right = f'{right}mm' if right else None
         self.contains = []
-        self.__currentSection = _section(first_section)
-        self.__preamble = [('fontenc', 'T1'), ('inputenc', 'utf8'), 'lmodern', 'textcomp']
+        self.__preamble = [('fontenc', 'T1'), ('inputenc', 'utf8'), 'lmodern', 'textcomp', 'geometry']
 
-    def generate_TeX(self):
+    def generate_TeX(self, **kwargs):
         if self.contains is []:
-            if self.__currentSection.items is []:
-                print("Nothing to generate in the file!")
-            else:
-                self.contains = self.__currentSection.items
+            print("Nothing to generate in the file!")
         out = '\\documentclass{article}\n'
 
         for i in self.contains:
-            for n in i.preamble:
+            for n in i.packages:
                 self.__preamble.append(n) if n not in self.__preamble else None
 
         for i in self.__preamble:
             out += self.__add_package(i)
 
-        if 'pfgplots' in self.__preamble:
-            out += '\\pgfplotsset{compat=newest}'
+        print(self.__preamble)
 
-        out += self.__add_package('geometry')
+        if 'pgfplots' in self.__preamble:
+            out += '\\pgfplotsset{compat=newest}\n'
+
         out += '\\geometry{'
         out += f'\ntop={self.top},' if self.top else ''
         out += f'\nbottom={self.bottom},' if self.bottom else ''
@@ -76,7 +66,11 @@ class Document:
         out += '}\n'
 
         out += '\n'
-        out += f'\n\\title{{{self.title}}}\n\\date{{}}' if self.title else ''
+        temp = None
+        if self.title:
+            temp = self.title
+            temp += f'\\\\\\large {self.subtitle}' if self.subtitle else None
+        out += f'\n\\title{{{temp}}}\n\\date{{}}' if temp else ''
         out += f'\n\\author{{{self.author}}}' if self.author else ''
         out += f'\n\n\\begin{{document}}\n'
         out += '\\maketitle\n' if self.title else ''
@@ -86,18 +80,30 @@ class Document:
 
         out += '\\end{document}'
 
-        katex = open(f'{self.title}.tex', "w+")
+        temp = self.title
+        for i in ["$", "%", "/", "\\"]:
+            temp = temp.replace(i, "")
+        temp = temp.replace('.', '_')
+
+        katex = open(f'{temp}.tex', "w+")
         katex.truncate()
         katex = katex.write(out)
 
-        os.system(f'pdflatex -jobname=\"{self.title}\" \"{self.title}.tex\" >/dev/null')
+        command = f'pdflatex -jobname=\"{temp}\" \"{temp}.tex\"'
+        silent = True
+        if 'debug' in kwargs:
+            if kwargs['debug'] is True:
+                silent = False
+        command += ' >/dev/null' if silent else ''
+
+        os.system(command)
 
     def add(self, item):
-        self.__currentSection.add(item)
+        self.contains.append(item)
 
-    def new_section(self, title: str):
-        self.contains.append(self.__currentSection)
-        self.__currentSection = _section(title)
+    def new_section(self, title: str, _type: int = 0):
+        _type = _type % 3
+        self.contains.append(_section(title, _type))
 
     def __add_package(self, package: str or tuple):
         out = '\\usepackage'
@@ -112,8 +118,8 @@ class Text(__main):
     def __init__(self, *args, align: str = None):
         self.text = ''
         for arg in args:
-            if type(arg) is str:
-                self.text += f'{arg} '
+            given = (str(arg).replace('->', '$\\rightarrow$')).replace('\n', '\\\\')
+            self.text += f'{given} '
         self.align = align
         super().__init__(['ragged2e']) if self.align is not None else super().__init__()
 
@@ -132,14 +138,15 @@ class Text(__main):
 
 
 class Equation(__main):
-    def __init__(self, equation: str = ''):
-        super().__init__()
+    def __init__(self, equation: str = '', numbered: bool = True):
+        super().__init__(['amsmath']) if '\\text' in equation else super().__init__()
         self.equation = equation
+        self.numbered = '' if numbered else '*'
 
-    def generate_Tex(self):
-        out = '\\begin{equation}\n'
-        out += self.equation
-        out += '\\end{equation}\n'
+    def generate_TeX(self):
+        out = f'\\begin{{equation{self.numbered}}}\n'
+        out += self.equation + '\n'
+        out += f'\\end{{equation{self.numbered}}}\n'
 
         return out
 
@@ -224,7 +231,7 @@ class line(__main):
 
 class plot(__main):
     def __init__(self, function: str, domain: tuple = None, color=None, name: str = None):
-        super().__init__(['tikz', 'pfgplots'])
+        super().__init__()
         self.function = function
         self.name = name
         self.color = color
@@ -242,13 +249,38 @@ class plot(__main):
         return out
 
 
-class axis(__main):
-    def __init__(self, samples: int = 100, labels: list = [None] * 2, minMax: list = [None] * 4, showTickMarks: bool = True, clip: bool = False):
+class coordinates(__main):
+    def __init__(self, coords: list, color: list = None, name: str = None):
         super().__init__()
-        self.ymax = minMax[3]
-        self.ymin = minMax[2]
-        self.xmax = minMax[1]
-        self.xmin = minMax[0]
+        self.coords = coords
+        self.name = name
+        self.color = color
+        self.color = f'{{rgb:red,{color[0]};green,{color[1]};blue,{color[2]}}}' if self.color is not None else None
+
+        self.generate_TeX()
+
+    def generate_TeX(self):
+        out = f'\\addplot['
+        out += f'color={self.color}' if self.color else ''
+        out += ']\ncoordinates {'
+        for i in self.coords:
+            out += f'{i}\n'
+        out += '};\n'
+        out += f'\\addlegendentry{{{self.name}}}\n' if self.name else ''
+
+        return out
+
+
+class axis(__main):
+    def __init__(self, title: str = None, samples: int = 100, labels: list = [None] * 2, showTickMarks: bool = True, clip: bool = False, **kwargs):
+        super().__init__(['tikz', 'pgfplots'])
+        self.title = title
+        self.width = f'{kwargs["width"]}cm' if 'width' in kwargs else None
+        self.height = f'{kwargs["height"]}cm' if 'height' in kwargs else None
+        self.ymax = kwargs['ymax'] if 'ymax' in kwargs else None
+        self.ymin = kwargs['ymin'] if 'ymin' in kwargs else None
+        self.xmax = kwargs['xmax'] if 'xmax' in kwargs else None
+        self.xmin = kwargs['xmin'] if 'xmin' in kwargs else None
         self.ylab = labels[1]
         self.xlab = labels[0]
         self.samples = samples
@@ -256,20 +288,23 @@ class axis(__main):
         self.clip = clip
         self.plots = []
 
-        self.generate_TeX()
-
     def generate_TeX(self):
-        out = '\\begin{center}\n\\begin{tikzpicture}\n\\begin{axis}[\naxis lines=middle,'
+        out = '\\begin{center}\n\\begin{tikzpicture}\n\\begin{axis}[\naxis lines=left,'
         out += f'\nclip={str(self.clip).lower()},'
         out += f'\nsamples={self.samples},' if self.samples else ''
         out += f'\nxlabel={self.xlab},' if self.xlab else ''
         out += f'\nylabel={self.ylab},' if self.ylab else ''
-        out += f'\nxmin={self.xmin},' if self.xmin else ''
-        out += f'\nxmax={self.xmax},' if self.xmax else ''
-        out += f'\nymin={self.ymin},' if self.ymin else ''
-        out += f'\nymax={self.ymax},' if self.ymax else ''
-        out += '\nticks=none' if not self.showTickMarks else ''
+        out += f'\nxmin={self.xmin},' if self.xmin is not None else ''
+        out += f'\nxmax={self.xmax},' if self.xmax is not None else ''
+        out += f'\nymin={self.ymin},' if self.ymin is not None else ''
+        out += f'\nymax={self.ymax},' if self.ymax is not None else ''
+        out += '\nticks=none,' if not self.showTickMarks else ''
+        out += f'\nwidth={self.width},' if self.width else ''
+        out += f'\nheight={self.height},' if self.height else ''
+        out += f'\ntitle={self.title}' if self.title else ''
         out += ']\n'
+
+        # axis lines=middle tag inside the [] section option #
 
         for i in self.plots:
             out += i.generate_TeX()
@@ -283,3 +318,19 @@ class axis(__main):
 
     def __repr__(self):
         return f'x-label: {self.xlab}\ny-label: {self.ylab}\nPlot(s):\n{self.plots}'
+
+
+class Code(__main):
+    def __init__(self, code: str, language: str = None):
+        super().__init__(['listings'])
+        self.code = code
+        self.language = language
+
+    def generate_Tex(self):
+        out = f'\\lstset{{language={self.language}}}\n\\begin{{lstset}}\n'
+        out += self.code
+        out += '\\begin{lstset}\n'
+
+# To add:
+# > show_contents bool for Document class
+#    - \tableofcontents{} inside \begin{document} after \maketitle

@@ -12,6 +12,12 @@ doc.add(introduction_text)
 # This creates a new section called "Proof 1" #
 doc.new_section("Proof 1")
 
+question1 = Text("Prove the following identity:")
+doc.add(question1)
+identity1 = Equation("\\frac{1+\\mathrm{cosec}\\theta}{\\mathrm{cot}\\theta}=\\frac{1+\\mathrm{tan}\\frac\\theta 2}{1-\\mathrm{tan}\\frac\\theta 2}")
+doc.add(identity1)
+line1 = Text("Using $t=\\mathrm{tan}\\frac\\theta 2$,")
+doc.add(line1)
 
 # This generates the .tex and .pdf file for the document #
 doc.generate_TeX()
