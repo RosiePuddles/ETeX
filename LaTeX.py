@@ -41,7 +41,7 @@ class Document:
         self.contains = []
         self.__preamble = [('fontenc', 'T1'), ('inputenc', 'utf8'), 'lmodern', 'textcomp', 'geometry']
 
-    def generate_TeX(self, **kwargs):
+    def generate_TeX(self, _compile: bool = True, **kwargs):
         if self.contains is []:
             print("Nothing to generate in the file!")
         out = '\\documentclass{article}\n'
@@ -89,14 +89,17 @@ class Document:
         katex.truncate()
         katex = katex.write(out)
 
-        command = f'pdflatex -jobname=\"{temp}\" \"{temp}.tex\"'
-        silent = True
-        if 'debug' in kwargs:
-            if kwargs['debug'] is True:
-                silent = False
-        command += ' >/dev/null' if silent else ''
+        if _compile:
+            command = f'pdflatex -jobname=\"{temp}\" \"{temp}.tex\"'
+            silent = True
+            if 'debug' in kwargs:
+                if kwargs['debug'] is True:
+                    silent = False
+            command += ' >/dev/null' if silent else ''
 
-        os.system(command)
+            os.system(command)
+            temp = temp.replace(" ", "\ ")
+            os.system(f'open ./{temp}.pdf')
 
     def add(self, item):
         self.contains.append(item)
@@ -327,9 +330,9 @@ class Code(__main):
         self.language = language
 
     def generate_Tex(self):
-        out = f'\\lstset{{language={self.language}}}\n\\begin{{lstset}}\n'
+        out = f'\\lstset{{language={self.language}}}\n\\begin{{lstlisting}}\n'
         out += self.code
-        out += '\\begin{lstset}\n'
+        out += '\\end{lstlisting}\n'
 
 # To add:
 # > show_contents bool for Document class
