@@ -1,25 +1,8 @@
 from LaTeX import *
 
-# We first instantiate the document with a title and an author #
-# This is assigned to the variable doc so we can add items to it #
-doc = Document(title="t-formula Proofs", author="RosiePuddles")
-
-# This creates a new Text class instance and assigns it to variable introduction_text #
-introduction_text = Text("In this example we will use the $t$-formula to prove some simple trigonometric identities")
-# This adds introduction_text to the document #
-doc.add(introduction_text)
-
-# This creates a new section called "Proof 1" #
-doc.new_section("Proof 1")
-
-question1 = Text("Prove the following identity:")
-doc.add(question1)
-identity1 = Equation("\\frac{1+\\mathrm{cosec}\\theta}{\\mathrm{cot}\\theta}=\\frac{1+\\mathrm{tan}\\frac\\theta 2}{1-\\mathrm{tan}\\frac\\theta 2}")
-doc.add(identity1)
-line1 = Text("Using $t=\\mathrm{tan}\\frac\\theta 2$,")
-doc.add(line1)
-
-# This generates the .tex and .pdf file for the document #
+doc = Document(title='Formatting test')
+eg = Text('*Example ~Heal~*')
+doc.add(eg)
 doc.generate_TeX()
 
 # if __name__ == "__main__":

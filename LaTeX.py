@@ -1,6 +1,9 @@
 import os
 
 list_types = {'numbered': 'enumerate', 'bullet': 'itemize'}
+Tokens = {'*': 'B', '**': 'I', '~': 'H', '~~': 'U'}
+toks = {'B': True, 'I': True, 'H': True, 'U': True}
+beginToks = {'B': '\\textbf{', 'I': '\\textit{', 'H': '\\hl{', 'U': '\\underline{'}
 
 
 class __main:
@@ -14,8 +17,8 @@ class __main:
     def transfer_packages(self):
         return self.packages
 
-    def generate_Tex(self):
-        pass
+    def generate_TeX(self):
+        raise Exception(f'{print(type(self).__name__)} does not have a generate_TeX method!')
 
 
 class _section:
@@ -53,10 +56,10 @@ class Document:
         for i in self.__preamble:
             out += self.__add_package(i)
 
-        print(self.__preamble)
-
         if 'pgfplots' in self.__preamble:
             out += '\\pgfplotsset{compat=newest}\n'
+        if 'hyperref' in self.__preamble:
+            out += '\\hypersetup{colorlinks=true}\n'
 
         out += '\\geometry{'
         out += f'\ntop={self.top},' if self.top else ''
@@ -69,7 +72,7 @@ class Document:
         temp = None
         if self.title:
             temp = self.title
-            temp += f'\\\\\\large {self.subtitle}' if self.subtitle else None
+            temp += f'\\\\\\large {self.subtitle}' if self.subtitle else ''
         out += f'\n\\title{{{temp}}}\n\\date{{}}' if temp else ''
         out += f'\n\\author{{{self.author}}}' if self.author else ''
         out += f'\n\n\\begin{{document}}\n'
@@ -96,10 +99,19 @@ class Document:
                 if kwargs['debug'] is True:
                     silent = False
             command += ' >/dev/null' if silent else ''
-
             os.system(command)
-            temp = temp.replace(" ", "\ ")
-            os.system(f'open ./{temp}.pdf')
+        temp = temp.replace(" ", "\ ")
+        if 'all_files' in kwargs:
+            if kwargs['all_files'] is False:
+                os.system(f'rm ./{temp}.aux')
+                os.system(f'rm ./{temp}.log')
+        else:
+            os.system(f'rm ./{temp}.aux')
+            os.system(f'rm ./{temp}.log')
+        if 'noTeX' in kwargs:
+            if kwargs['noTeX'] is True:
+                os.system(f'rm ./{temp}.tex')
+        os.system(f'open ./{temp}.pdf')
 
     def add(self, item):
         self.contains.append(item)
@@ -117,32 +129,119 @@ class Document:
         return out + '\n'
 
 
+class _string:
+    def __init__(self, text):
+        self.text = text
+
+    def __repr__(self):
+        return f'<_string: \'{self.text}\'>'
+
+
+class _tok:
+    def __init__(self, type_):
+        self.type_ = Tokens[type_]  # Type can be either 'B', 'I', 'H', or 'U'
+
+    def __repr__(self):
+        return f'<_tok: {self.type_}>'
+
+
 class Text(__main):
     def __init__(self, *args, align: str = None):
-        self.text = ''
+        self.text = []
         for arg in args:
-            given = (str(arg).replace('->', '$\\rightarrow$')).replace('\n', '\\\\')
-            self.text += f'{given} '
+            given = self.LexerLike(str(arg).replace('->', '$\\rightarrow$').replace('\n', '\\\\'))
+            self.text += given
         self.align = align
-        super().__init__(['ragged2e']) if self.align is not None else super().__init__()
+        packages = []
+        packages += ['ragged2e']if self.align is not None else []
+        for i in self.text:
+            if isinstance(i, _tok):
+                if i.type_ == 'H':
+                    packages += ['hyperref', 'soul']
+                    break
+        super().__init__(packages)
+
+    def LexerLike(self, text):
+        out = []
+        temp = ''
+        textList = [i for i in text]
+        if '*' not in textList and '~' not in textList:
+            return [_string(text)]
+        end = len(textList)
+        n = 0
+        while n < end:
+            if textList[n] == '\\':
+                try:
+                    temp += textList[n + 1]
+                except IndexError:
+                    pass
+                n += 1
+            elif textList[n] in ['*', '~']:
+                out.append(_string(temp)) if temp != '' else None
+                try:
+                    if textList[n + 1] == textList[n]:
+                        out.append(_tok(textList[n] * 2))
+                        n += 1
+                    else:
+                        out.append(_tok(textList[n]))
+                except IndexError:
+                    out.append(_tok(textList[n]))
+                temp = ''
+            else:
+                temp += textList[n]
+            n += 1
+        types = {'B': 0, 'I': 0, 'H': 0, 'U': 0}
+        for i in out:
+            if isinstance(i, _tok):
+                types[i.type_] += 1
+        for i in types.values():
+            if i % 2 != 0:
+                raise Exception('An incorrect number of formatting characters were passed into the class.')
+        return out
 
     def generate_TeX(self):
         out = ''
         if self.align:
             out += f'\\begin{{flush{self.align}}}\n'
-            out += f'{self.text}\n'
+            out += f'{self.generateSyntaxed(self.text)}\n'
             out += f'\\end{{flush{self.align}}}\n'
         else:
-            out += f'{self.text}\n'
+            out += f'{self.generateSyntaxed(self.text)}\n'
+        return out
+
+    def generateSyntaxed(self, text):
+        out = ''
+        for i in text:
+            if isinstance(i, _string):
+                out += i.text
+            else:
+                out += beginToks[i.type_] if toks[i.type_] else '}'
+                toks[i.type_] = False if toks[i.type_] else True
         return out
 
     def __repr__(self):
         return f'Text > [\"{self.text}\", align > {self.align} ]'
 
 
+class Footnote(__main):
+    def __init__(self, *args, number: int = None):
+        super().__init__(['hyperref'])
+        self.text = ''
+        for arg in args:
+            self.text += str(arg)
+        self.number = number
+
+    def generate_TeX(self):
+        out = '\\footnote'
+        out += f'[{self.number}]' if self.number else ''
+        out += f'{{{self.text}}}'
+
+        return out
+
+
 class Equation(__main):
     def __init__(self, equation: str = '', numbered: bool = True):
-        super().__init__(['amsmath']) if '\\text' in equation else super().__init__()
+        super().__init__(['amsmath']) if ('\\text' in equation or numbered == True) else super().__init__()
         self.equation = equation
         self.numbered = '' if numbered else '*'
 
@@ -329,11 +428,54 @@ class Code(__main):
         self.code = code
         self.language = language
 
-    def generate_Tex(self):
+    def generate_TeX(self):
         out = f'\\lstset{{language={self.language}}}\n\\begin{{lstlisting}}\n'
         out += self.code
         out += '\\end{lstlisting}\n'
 
-# To add:
-# > show_contents bool for Document class
-#    - \tableofcontents{} inside \begin{document} after \maketitle
+        return out
+
+
+class Chemical(__main):
+    def __init__(self, chemical,):
+        super().__init__(['mhchem'])
+        self.chemical = chemical
+
+    def generate_TeX(self):
+        return f'\\ce{{{self.chemical}}}'
+
+    def __repr__(self):
+        return f'{self.chemical}'
+
+
+class ChemEquation(__main):
+    def __init__(self, reactants: str or list, products: str or list, catalysts: str or list = None):
+        super().__init__(['mhchem'])
+        self.reactants = self.__StringOrList(reactants)
+        self.products = self.__StringOrList(products)
+        self.catalysts = self.__StringOrList(catalysts)
+
+    def __StringOrList(self, option):
+        out = []
+        if type(option) == list:
+            for i in option:
+                out.append(Chemical(i))
+        else:
+            out = [Chemical(option)]
+        return out
+
+    def generate_TeX(self):
+        out = '\\ce{'
+        for i in self.reactants[:-1]:
+            out += f'{i} + '
+        out += self.reactants[-1]
+        out += f'->['
+        for i in self.catalysts[:-1]:
+            out += f'{i}\n'
+        out += self.catalysts[-1]
+        out += ']'
+        for i in self.products[:-1]:
+            out += f'{i} + '
+        out += self.products[-1]
+        out += '}'
+        return out

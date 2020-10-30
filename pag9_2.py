@@ -119,8 +119,6 @@ qs.add(Text('Mass lost:\nAt $t=0$, $\\frac{\mathrm{d}M}{\mathrm{d}t}$ was $-4\\t
             'In both cases, the gradient at $T_\\frac12$ is approximately half of what t was at $t=0$, giving further evidence that the reaction is first order.'))
 doc.add(qs)
 
-doc.new_section("Extra proofs")
-
 
 # r=-0.942691569, pmcc(0.00000000000000001 -> 1*10^-17)=0.9358423 #
 # b=-3.087939*10^-3 #
