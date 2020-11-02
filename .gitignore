@@ -4,5 +4,8 @@
 .DS_Store
 test.py
 
-/vEne
-/lib
+vEne/
+lib/
+School/
+include/
+bin/

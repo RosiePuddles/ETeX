@@ -4,11 +4,16 @@ list_types = {'numbered': 'enumerate', 'bullet': 'itemize'}
 Tokens = {'*': 'B', '**': 'I', '~': 'H', '~~': 'U'}
 toks = {'B': True, 'I': True, 'H': True, 'U': True}
 beginToks = {'B': '\\textbf{', 'I': '\\textit{', 'H': '\\hl{', 'U': '\\underline{'}
+headings = ['empty', 'plain', 'headings', 'myheadings', 'fancy']
 
 
 class __main:
     def __init__(self, Packages: list = None):
         self.packages = Packages if Packages else []
+
+    def __getattr__(self, item):
+        if item in self.__dict__:
+            return self.__getattr__(item)
 
     def add_super(self, new_packages: list):
         for i in new_packages:
@@ -19,6 +24,34 @@ class __main:
 
     def generate_TeX(self):
         raise Exception(f'{print(type(self).__name__)} does not have a generate_TeX method!')
+
+
+class out:
+    def __init__(self):
+        self.given = ''
+
+    def __add__(self, other):
+        print('__add__ method called')
+        temp = self.given
+        if not isinstance(other[0], type(None)):
+            self.given += f'{other[1]}{other[0]}{other[2]}'
+        else:
+            self.given = self.given
+        print(f'Added something : {self.given != temp}\n')
+        return self
+
+    def __sub__(self, other):
+        self.given += f'{other}'
+
+    def __repr__(self):
+        return self.given
+
+
+class _docSettings:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+    # def get
 
 
 class _section:
@@ -33,10 +66,8 @@ class _section:
 
 
 class Document:
-    def __init__(self, title: str = None, subtitle: str = None, author: str = None, top: int = None, bottom: int = None, left: int = None, right: int = None):
-        self.title = title
-        self.subtitle = subtitle
-        self.author = author
+    def __init__(self, top: int = None, bottom: int = None, left: int = None, right: int = None, **kwargs):
+        self.__dict__.update(kwargs)
         self.top = f'{top}mm' if top else None
         self.bottom = f'{bottom}mm' if bottom else None
         self.left = f'{left}mm' if left else None
@@ -44,44 +75,50 @@ class Document:
         self.contains = []
         self.__preamble = [('fontenc', 'T1'), ('inputenc', 'utf8'), 'lmodern', 'textcomp', 'geometry']
 
+    def __getattr__(self, item):
+        if item in self.__dict__:
+            return self.__getattr__(item)
+
     def generate_TeX(self, _compile: bool = True, **kwargs):
         if self.contains is []:
-            print("Nothing to generate in the file!")
-        out = '\\documentclass{article}\n'
+            raise Exception("Nothing to generate in the file!")
+        give = out()
+        give - '\\documentclass{article}\n'
 
         for i in self.contains:
             for n in i.packages:
                 self.__preamble.append(n) if n not in self.__preamble else None
 
         for i in self.__preamble:
-            out += self.__add_package(i)
+            give - self.__add_package(i)
 
         if 'pgfplots' in self.__preamble:
-            out += '\\pgfplotsset{compat=newest}\n'
+            give - '\\pgfplotsset{compat=newest}\n'
         if 'hyperref' in self.__preamble:
-            out += '\\hypersetup{colorlinks=true}\n'
+            give - '\\hypersetup{colorlinks=true}\n'
 
-        out += '\\geometry{'
-        out += f'\ntop={self.top},' if self.top else ''
-        out += f'\nbottom={self.bottom},' if self.bottom else ''
-        out += f'\nleft={self.left},' if self.left else ''
-        out += f'\nright={self.right},' if self.right else ''
-        out += '}\n'
+        give - '\\geometry{'
+        give += (self.top, '\ntop=', ',')
+        give += (self.bottom, '\nbottom=', ',')
+        give += (self.left, '\nleft=', ',')
+        give += (self.right, '\nright=', ',')
+        give - '}\n\n'
 
-        out += '\n'
         temp = None
         if self.title:
             temp = self.title
             temp += f'\\\\\\large {self.subtitle}' if self.subtitle else ''
-        out += f'\n\\title{{{temp}}}\n\\date{{}}' if temp else ''
-        out += f'\n\\author{{{self.author}}}' if self.author else ''
-        out += f'\n\n\\begin{{document}}\n'
-        out += '\\maketitle\n' if self.title else ''
+        if temp: give - f'\n\\title{{{temp}}}\n\\date{{}}'
+        give += (self.author,'\n\\author{',  '}')
+        give += (self.contents_title,'\\renewcommand*\\contentsname{',  '}')
+        give - f'\n\n\\begin{{document}}\n'
+        give - '\\maketitle\n'
+        if self.contents: give - '\\tableofcontents\n'
 
         for i in self.contains:
-            out += i.generate_TeX()
+            give - i.generate_TeX()
 
-        out += '\\end{document}'
+        give - '\\end{document}'
 
         temp = self.title
         for i in ["$", "%", "/", "\\"]:
@@ -90,7 +127,7 @@ class Document:
 
         katex = open(f'{temp}.tex', "w+")
         katex.truncate()
-        katex = katex.write(out)
+        katex = katex.write(give.__repr__())
 
         if _compile:
             command = f'pdflatex -jobname=\"{temp}\" \"{temp}.tex\"'
@@ -101,16 +138,6 @@ class Document:
             command += ' >/dev/null' if silent else ''
             os.system(command)
         temp = temp.replace(" ", "\ ")
-        if 'all_files' in kwargs:
-            if kwargs['all_files'] is False:
-                os.system(f'rm ./{temp}.aux')
-                os.system(f'rm ./{temp}.log')
-        else:
-            os.system(f'rm ./{temp}.aux')
-            os.system(f'rm ./{temp}.log')
-        if 'noTeX' in kwargs:
-            if kwargs['noTeX'] is True:
-                os.system(f'rm ./{temp}.tex')
         os.system(f'open ./{temp}.pdf')
 
     def add(self, item):
@@ -127,6 +154,17 @@ class Document:
         else:
             out += f'{{{package}}}'
         return out + '\n'
+
+
+class headFoot(__main):
+    def __init__(self, style: int = 1, **kwargs):
+        self.style = headings[style % (len(headings) - 1)]
+        super().__init__(['fancyhdr']) if self.style == 'fancy' else super().__init__()
+        if self.style == 'myheadings':
+            self.kargs = kwargs
+
+    def generate_TeX(self):
+        pass
 
 
 class _string:
@@ -153,7 +191,7 @@ class Text(__main):
             self.text += given
         self.align = align
         packages = []
-        packages += ['ragged2e']if self.align is not None else []
+        packages += ['ragged2e'] if self.align is not None else []
         for i in self.text:
             if isinstance(i, _tok):
                 if i.type_ == 'H':
@@ -204,9 +242,9 @@ class Text(__main):
         if self.align:
             out += f'\\begin{{flush{self.align}}}\n'
             out += f'{self.generateSyntaxed(self.text)}\n'
-            out += f'\\end{{flush{self.align}}}\n'
+            out += f'\\end{{flush{self.align}}}\\\\\n'
         else:
-            out += f'{self.generateSyntaxed(self.text)}\n'
+            out += f'{self.generateSyntaxed(self.text)}\\\\\n'
         return out
 
     def generateSyntaxed(self, text):
@@ -217,10 +255,7 @@ class Text(__main):
             else:
                 out += beginToks[i.type_] if toks[i.type_] else '}'
                 toks[i.type_] = False if toks[i.type_] else True
-        return out
-
-    def __repr__(self):
-        return f'Text > [\"{self.text}\", align > {self.align} ]'
+        return str(out)
 
 
 class Footnote(__main):
@@ -239,9 +274,28 @@ class Footnote(__main):
         return out
 
 
+class Columns(__main):
+    def __init__(self, columns: int, items: str or list = None, unbalanced: bool = False):
+        super().__init__()
+        self.columns = max(columns, 1)
+        self.items = items if type(items) == list else [items]
+        self.unbalanced = unbalanced
+
+    def add(self, item):
+        self.items.append(item)
+
+    def generate_TeX(self):
+        out = '\\begin{multicols'
+        out += f'*}}{{{self.columns}}}' if self.unbalanced else f'}}{{{self.columns}}}'
+        for i in self.items:
+            out += i.generate_TeX()
+        out += '\\end{multicols'
+        out += '*}' if self.unbalanced else '}'
+
+
 class Equation(__main):
     def __init__(self, equation: str = '', numbered: bool = True):
-        super().__init__(['amsmath']) if ('\\text' in equation or numbered == True) else super().__init__()
+        super().__init__(['amsmath']) if ('\\text' in equation or numbered is False) else super().__init__()
         self.equation = equation
         self.numbered = '' if numbered else '*'
 
@@ -254,7 +308,7 @@ class Equation(__main):
 
 
 class List(__main):
-    def __init__(self, list_type: str = 'numbered', items: list = []):
+    def __init__(self, list_type: str = 'numbered', items: list = None):
         super().__init__()
         self.list_type = list_types.get(list_type)
         self.items = items
@@ -287,7 +341,7 @@ class List(__main):
 
 
 class group(__main):
-    def __init__(self, items: list = []):
+    def __init__(self, items: list = None):
         super().__init__()
         self.items = items
 
@@ -320,7 +374,7 @@ class line(__main):
         for i in self.coordinates:
             out += f'{i} '
 
-        out = self.out[:-1]
+        out = out[:-1]
 
         Axis = (self.coordinates[0][0], 'x') if self.coordinates[0][0] == self.coordinates[1][0] else (self.coordinates[0][1], 'y')
 
@@ -449,33 +503,45 @@ class Chemical(__main):
 
 
 class ChemEquation(__main):
-    def __init__(self, reactants: str or list, products: str or list, catalysts: str or list = None):
+    def __init__(self, reactants: str or list, products: str or list, catalysts: str or list = None, conditions: str or list = None):
         super().__init__(['mhchem'])
         self.reactants = self.__StringOrList(reactants)
         self.products = self.__StringOrList(products)
         self.catalysts = self.__StringOrList(catalysts)
+        self.conditions = self.__StringOrList(conditions)
 
     def __StringOrList(self, option):
-        out = []
-        if type(option) == list:
-            for i in option:
-                out.append(Chemical(i))
+        if option is None:
+            return None
         else:
-            out = [Chemical(option)]
-        return out
+            out = []
+            if type(option) == list:
+                for i in option:
+                    out.append(Chemical(i))
+            else:
+                out = [Chemical(option)]
+            return out
 
     def generate_TeX(self):
         out = '\\ce{'
         for i in self.reactants[:-1]:
-            out += f'{i} + '
-        out += self.reactants[-1]
-        out += f'->['
-        for i in self.catalysts[:-1]:
-            out += f'{i}\n'
-        out += self.catalysts[-1]
-        out += ']'
+            out += f'{i.chemical} + '
+        out += self.reactants[-1].chemical + ' ->'
+        if self.catalysts is not None:
+            out += '[{'
+            for i in self.catalysts[:-1]:
+                out += f'{i.chemical}, '
+            out += self.catalysts[-1].chemical
+            out += '}]'
+        if self.conditions is not None:
+            out += '[{'
+            for i in self.conditions[:-1]:
+                out += f'{i.chemical}, '
+            out += self.conditions[-1].chemical
+            out += '}]'
+        out += ' '
         for i in self.products[:-1]:
-            out += f'{i} + '
-        out += self.products[-1]
+            out += f'{i.chemical} + '
+        out += self.products[-1].chemical
         out += '}'
         return out
