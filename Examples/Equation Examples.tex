@@ -1,0 +1,27 @@
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{textcomp}
+\usepackage{geometry}
+\usepackage{amsmath}
+\geometry{}
+
+
+\title{Equation Examples}
+\date{}
+\author{RosiePuddles}
+
+\begin{document}
+\maketitle
+In this document we will look at how we can use ETeX to generate different types of equations.\\
+\section{Simple Equations}
+We can write numbered equations:\\
+\begin{equation}
+\frac{1+\mathrm{cosec}\theta}{\mathrm{cot}\theta}=\frac{1+\mathrm{tan}\frac\theta 2}{1-\mathrm{tan}\frac\theta 2}
+\end{equation}
+\section{Equations Without Numbers}
+\begin{equation*}
+\int_{0}^{n}\frac{1}{\sqrt{1+x^2}}\mathrm{d}x=\pi
+\end{equation*}
+\end{document}

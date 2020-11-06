@@ -1,63 +1,112 @@
 from LaTeX import *
 
-doc = Document(title='Formatting test')
-eg = Text('*Example ~Heal~*')
-doc.add(eg)
-doc.generate_TeX()
+doc = Document(title='ETeX Documentation', subtitle='V0.1', author='RosiePuddles', contents=True)
+doc.new_section(title='Preface')
+doc.add(Text('This package is designed to allow the user to generate \\LaTeX  files and associated pdf files in a more user friendly way. '
+             'Please note, however, this package is still currently heavily in development, and things will go wrong. Any bugs can be reported on '
+             'the \\href{https://github.com/RosiePuddles/ETeX_from_python/issues}{issues page} of the GitHub repository. You can request any features you cannot find and want adding to the package.'
+             ' Having said that, I hope you find this package useful and fairly easy to use as intended.'))
 
-# if __name__ == "__main__":
-#     Doc = Document(title='Photoelectric Effect', author='Rosie Bartlett', top='5mm', left='15mm', right='15mm')
-#     all_questions = List()
-#     currentQ = List()
-#
-#     ans = Text("Photoelectric emission from a metal surface is the ",
-#                "emission of electrons from a metal surface due to the photoelectric effect.")
-#     currentQ.add(ans)
-#     ans = Text("Since for each metal the valence electrons are attracted by different amounts by the nucleus, each photon that hits the metal must have a minimum amount of energy, called the work function $\phi$, to remove the valence electron. $\phi$ is different for each type of metal since it is dependant on the attraction between the atom and nucleus.")
-#     currentQ.add(ans)
-#     all_questions.add(currentQ)
-#
-#     currentQ = List()
-#     part = List()
-#     ans = Text("$E=hf=450\\times10^{-9}\\times h\\approx3.0\\times10^{-40}J$")
-#     part.add(ans)
-#     ans = Text("$E=hf=1500\\times10^{-9}\\times h\\approx9.9\\times10^{-40}J$")
-#     part.add(ans)
-#     currentQ.add(part)
-#     ans = Text("Since $E=hf$, and $v=f\lambda$, as $\\lambda$ increases, $f$ must decrease, which means the energy of the photon must also decrease. When $\\lambda\\in\\langle 450\\times10^{-9}, 650\\times10^{-9} \\rangle$ then at some point $E=\\phi$, meaning that at a higher wavelength than when that occurs, no electrons can be emitted because the photons do not have enough energy to move them.")
-#     currentQ.add(ans)
-#     all_questions.add(currentQ)
-#
-#     currentQ = List()
-#     aaaaa = group()
-#     ans = Text("Using $f=\\frac{e\\phi_{eV}}{h}$:")
-#     aaaaa.add(ans)
-#     ans = Text("Caesium, potassium")
-#     currentQ.add(ans)
-#     ans = Text("Silver")
-#     currentQ.add(ans)
-#     ans = Text("Caesium")
-#     currentQ.add(ans)
-#     ans = Text("0. A photon with a wavelength of 300nm has less energy than $\\phi$")
-#     currentQ.add(ans)
-#     ans = Text("0.18V")
-#     currentQ.add(ans)
-#     aaaaa.add(currentQ)
-#     all_questions.add(aaaaa)
-#
-#     all_questions.add(Text("1.3V"))
-#     all_questions.add(Text("3.7$\\times10^{-25}$ms$^{-1}$"))
-#
-#     currentQ = List()
-#     ans = Text("3.1$\\times10^{-19}$J")
-#     currentQ.add(ans)
-#     ans = Text("$\phi=$1.6$\\times10^{-19}$J")
-#     currentQ.add(ans)
-#     ans = Text("$f_0=$2.5$\\times10^{14}$Hz")
-#     currentQ.add(ans)
-#
-#     all_questions.add(currentQ)
-#
-#     Doc.add(all_questions)
-#
-#     Doc.generate_TeX()
+############################################################
+# BASE SECTIONS
+############################################################
+doc.new_section(title='Base Classes')
+
+# DOCUMENT
+doc.new_section(title='Document', _type=1)
+doc.add(Code('class Document(*args, **kwargs) -> None', language='Python'))
+doc.add(Text('The \\verb|Document| class is the main class used in ETeX. It handles all tex code'
+             'generation, and contains all information about the document as well as the actual contents themself.'))
+# GENERATE_TEX
+doc.new_section(title='generate\\_TeX function', _type=2)
+doc.add(Code('Document.generate_TeX(self, _compile: bool = True, **kwargs) -> str', language='Python'))
+doc.add(Text('The \\verb|generate_TeX| function is used to firstly generate the .tex file which is then compiled and the resulting .pdf file is opened.'
+             ' The parameter \\verb|_compile| is set to \\verb|False| by default. If it is changed to \\verb|True|, then only the .tex file will be generated, but not compiled. '
+             'For the \\verb|kwargs|, you can pass in \\verb|debug=True| to see the logs from pdflatex as it compiles the .tex file.\nThe output .tex file name will be a '
+             'formatted version of the value for the title given on instantiation of a new instance of the \\verb|Document| class. Any of the following characters are removes:'))
+temp = List(list_type='bullet')
+temp.add(Text('\\$'))
+temp.add(Text('\\%'))
+temp.add(Text('//'))
+temp.add(Text('\\textbackslash'))
+doc.add(temp)
+doc.add(Text('Bullet points are also formatted and turned into underscores. The resulting formatted filename is then used for all of the resulting output files.'))
+# ADD
+doc.new_section(title='add function', _type=2)
+doc.add(Code('Document.add(self, item: _main) -> None:\n\tself.contains.append(item)', language='Python'))
+doc.add(Text('The \\verb|add| function adds a class that inherits from the class \\verb|_main|'))
+doc.add(Footnote('See section 2.5.1 for a full list of classes that directly or indirectly inherit from the \\_main class.'))
+doc.add(Text(' to the list of contents inside an instance of the \\verb|Document| class. The function is used'
+             ' to add items into the document.'))
+# NEW_SECTION
+doc.new_section(title='new\\_section function', _type=2)
+doc.add(Code('Document.add(self, title: str, _type: int = 0) -> None:\n\t_type = _type % 3\n\tself.contains.append(_section(title, _type))', language='Python'))
+doc.add(Text('The \\verb|new_section| function is used to add a new section to a \\verb|Document| class instance.'
+             ' The \\verb|_type| argument is used to identify the type of section with 0 being a section, 1 being a subsection, and 2 being a subsubsection.'))
+
+# TEXT
+doc.new_section(title='Text', _type=1)
+doc.add(Code('class Text(self, text: str, align: str = None) -> None', language='Python'))
+doc.add(Text('The \\verb|Text| class is the class used for the handling of text inside of ETeX. The class contains some general string formatting features allowing for '
+             '*bold*, **italic**, ~highlighted~, and ~~underlined~~ text inside of the document. To read more on this see section 2.2.1. The text can also be aligned to either the left, center,'
+             ' or right using the \\verb|align| argument. This will only apply to the current \\verb|Text| class instance and will not be applied to any subsequent instances of the class.'))
+doc.new_section(title='String formatting', _type=2)
+doc.add(Text('To format a string in ETeX, you use the /* and \\/~{} characters. The following table shows the formatting character and the relevant format.\\\\'))
+formattingTable = [[Text('Formatting character'), Text('Associated formatting')],
+                   [Text('/*'), Text('*Bold*')],
+                   [Text('/*/*'), Text('**Italic**')],
+                   [Text('\\/~{}'), Text('~Highlight~')],
+                   [Text('\\/~{}\\/~{}'), Text('~~Underline~~')]]
+doc.add(Table(values=formattingTable, format=['c', 'l']))
+# LIST
+doc.new_section(title='List', _type=1)
+doc.add(Code('class List(self, list_type: str = \'numbered\', items: list = None) -> None', language='Python'))
+doc.add(Text('The \\verb|List| class is used to created lists inside of ETeX. These list can be either a numbered list or a '
+             'bullet point list through the use of the \\verb|list_type| argument'))
+doc.add(Footnote('See section 2.3.1 for list types'))
+doc.add(Text('. The list can also be initialised with items already inside of it, so long as the items inherit from the \\verb|_main| class'))
+doc.add(Footnote('See section 2.5.1 for a full list of classes that directly or indirectly inherit from the \\_main class.'))
+doc.add(Text('. The list can also be left empty upon initialisation and later on have items added to it using the \\verb|add| function.'))
+doc.new_section(title='List types', _type=2)
+doc.add(Text('To change the type of list, you can use the \\verb|list_type| argument, which takes in'
+             ' a string of wither \\verb|numbered| or \\verb|bullet|, which correspond to a numbered list, or a '
+             'bullet point list.'))
+doc.new_section(title='add function', _type=2)
+doc.add(Code('List.add(self, item: _main) -> None:\n\tself.items.append(item)\n\tself.add_super(item.packages)', language='Python'))
+doc.add(Text('The add function adds the given item to the end of the list instance\'s list. The item has to inherit from the \\verb|_main| class'
+             ' to be added. The second line of the function is part of the process of ensuing all the required packages are declared '
+             'in the preamble of the .tex document.'))
+# GROUP
+doc.new_section(title='Group', _type=1)
+
+# _MAIN
+doc.new_section(title='\\_main', _type=1)
+doc.add(Text('The \\verb|_main| class is the base class for all other classes the user interfaces with and provides several important '
+             'functions and alterations to base functions that are used throughout.'))
+doc.new_section(title='Child classes', _type=2)
+doc.add(Text('This section provides a list of all the different child classes of the \\verb|_main| class:'))
+temp = Columns(2)
+types = List(list_type='bullet')
+types.add(Text('\\verb|Text|'))
+types.add(Text('\\verb|Footnote|'))
+types.add(Text('\\verb|Columns|'))
+types.add(Text('\\verb|Equation|'))
+types.add(Text('\\verb|List|'))
+types.add(Text('\\verb|group|'))
+types.add(Text('\\verb|line|'))
+types.add(Text('\\verb|plot|'))
+types.add(Text('\\verb|coordinates|'))
+types.add(Text('\\verb|axis|'))
+types.add(Text('\\verb|Code|'))
+types.add(Text('\\verb|Chemical|'))
+types.add(Text('\\verb|ChemEquation|'))
+temp.add(types)
+doc.add(temp)
+doc.new_section(title='generate\\_TeX method', _type=2)
+doc.add(Code('_main.generate_TeX(self, *args, **kwargs) -> str', language='Python'))
+doc.add(Text('The \\verb|generate_TeX| method generates raises an exception if run. All classes that inherit from \\verb|_main|'
+             ' will overwrite this method with their own method to generate their unique \\LaTeX  code.'))
+doc.new_section(title='Maths Classes')
+doc.new_section(title='Plotting Classes')
+doc.new_section(title='Chemistry Classes')
+doc.generate_TeX(debug=True)

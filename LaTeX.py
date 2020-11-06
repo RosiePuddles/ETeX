@@ -1,13 +1,15 @@
 import os
 
 list_types = {'numbered': 'enumerate', 'bullet': 'itemize'}
-Tokens = {'*': 'B', '**': 'I', '~': 'H', '~~': 'U'}
-toks = {'B': True, 'I': True, 'H': True, 'U': True}
-beginToks = {'B': '\\textbf{', 'I': '\\textit{', 'H': '\\hl{', 'U': '\\underline{'}
+TT_B = 'bold'  # *
+TT_I = 'italic'  # **
+TT_H = 'highlight'  # ~
+TT_U = 'underline'  # ~~
+tokenStarts = {TT_B: '\\textbf{', TT_I: '\\textit{', TT_H: '\\hl{', TT_U: '\\underline{'}
 headings = ['empty', 'plain', 'headings', 'myheadings', 'fancy']
 
 
-class __main:
+class _main:
     def __init__(self, Packages: list = None):
         self.packages = Packages if Packages else []
 
@@ -31,13 +33,11 @@ class out:
         self.given = ''
 
     def __add__(self, other):
-        print('__add__ method called')
         temp = self.given
         if not isinstance(other[0], type(None)):
             self.given += f'{other[1]}{other[0]}{other[2]}'
         else:
             self.given = self.given
-        print(f'Added something : {self.given != temp}\n')
         return self
 
     def __sub__(self, other):
@@ -62,7 +62,16 @@ class _section:
         self.type = _type
 
     def generate_TeX(self):
-        return f'\\{"sub" * self.type}section{{{self.title}}}\n'
+        name = "sub" * self.type
+        out = f'\\{name}section[{self.title}]{{{self.title}}}\n'
+        # out += f'\\label{{{name}sec:{self.title.lower().replace(" ", "_")}}}\n\n'
+        return out
+
+
+class _package:
+    def __init__(self, name: str, additional: str = None):
+        self.name = name
+        self.additional = additional
 
 
 class Document:
@@ -73,7 +82,7 @@ class Document:
         self.left = f'{left}mm' if left else None
         self.right = f'{right}mm' if right else None
         self.contains = []
-        self.__preamble = [('fontenc', 'T1'), ('inputenc', 'utf8'), 'lmodern', 'textcomp', 'geometry']
+        self.__preamble = [('fontenc', 'T1'), ('inputenc', 'utf8'), 'lmodern', 'textcomp', 'hyperref', 'geometry']
 
     def __getattr__(self, item):
         if item in self.__dict__:
@@ -95,7 +104,7 @@ class Document:
         if 'pgfplots' in self.__preamble:
             give - '\\pgfplotsset{compat=newest}\n'
         if 'hyperref' in self.__preamble:
-            give - '\\hypersetup{colorlinks=true}\n'
+            give - '\\hypersetup{colorlinks,\ncitecolor = blue,\nfilecolor = blue,\nlinkcolor = blue,\nurlcolor = blue\n}\n'
 
         give - '\\geometry{'
         give += (self.top, '\ntop=', ',')
@@ -109,11 +118,11 @@ class Document:
             temp = self.title
             temp += f'\\\\\\large {self.subtitle}' if self.subtitle else ''
         if temp: give - f'\n\\title{{{temp}}}\n\\date{{}}'
-        give += (self.author,'\n\\author{',  '}')
-        give += (self.contents_title,'\\renewcommand*\\contentsname{',  '}')
+        give += (self.author, '\n\\author{',  '}')
+        give += (self.contents_title, '\\renewcommand*\\contentsname{',  '}')
         give - f'\n\n\\begin{{document}}\n'
         give - '\\maketitle\n'
-        if self.contents: give - '\\tableofcontents\n'
+        if self.contents: give - '\\tableofcontents\n\\newpage\n'
 
         for i in self.contains:
             give - i.generate_TeX()
@@ -130,17 +139,18 @@ class Document:
         katex = katex.write(give.__repr__())
 
         if _compile:
-            command = f'pdflatex -jobname=\"{temp}\" \"{temp}.tex\"'
+            command = f'latex -jobname=\"{temp}\" \"{temp}.tex\"'
             silent = True
             if 'debug' in kwargs:
                 if kwargs['debug'] is True:
                     silent = False
             command += ' >/dev/null' if silent else ''
             os.system(command)
+            os.system(f'pdf{command}')
         temp = temp.replace(" ", "\ ")
         os.system(f'open ./{temp}.pdf')
 
-    def add(self, item):
+    def add(self, item: _main):
         self.contains.append(item)
 
     def new_section(self, title: str, _type: int = 0):
@@ -156,7 +166,7 @@ class Document:
         return out + '\n'
 
 
-class headFoot(__main):
+class headFoot(_main):
     def __init__(self, style: int = 1, **kwargs):
         self.style = headings[style % (len(headings) - 1)]
         super().__init__(['fancyhdr']) if self.style == 'fancy' else super().__init__()
@@ -167,98 +177,100 @@ class headFoot(__main):
         pass
 
 
-class _string:
-    def __init__(self, text):
-        self.text = text
+class _str:
+    def __init__(self, text: str):
+        self.value = text
 
     def __repr__(self):
-        return f'<_string: \'{self.text}\'>'
+        return f'_str: {self.value}'
 
 
 class _tok:
-    def __init__(self, type_):
-        self.type_ = Tokens[type_]  # Type can be either 'B', 'I', 'H', or 'U'
+    def __init__(self, tokType: str):
+        self.value = tokType
 
     def __repr__(self):
-        return f'<_tok: {self.type_}>'
+        return f'_tok: {self.value}'
 
 
-class Text(__main):
-    def __init__(self, *args, align: str = None):
-        self.text = []
-        for arg in args:
-            given = self.LexerLike(str(arg).replace('->', '$\\rightarrow$').replace('\n', '\\\\'))
-            self.text += given
+class Text(_main):
+    def __init__(self, text: str, align: str = None) -> None:
+        self.text = text
+        self._LexerLike()
         self.align = align
-        packages = []
-        packages += ['ragged2e'] if self.align is not None else []
+        packages = ['ragged2e'] if self.align else []
         for i in self.text:
             if isinstance(i, _tok):
-                if i.type_ == 'H':
+                if i.value == TT_H:
                     packages += ['hyperref', 'soul']
                     break
         super().__init__(packages)
 
-    def LexerLike(self, text):
-        out = []
+    def _LexerLike(self) -> None:
+        given = []
         temp = ''
-        textList = [i for i in text]
-        if '*' not in textList and '~' not in textList:
-            return [_string(text)]
-        end = len(textList)
-        n = 0
-        while n < end:
-            if textList[n] == '\\':
+        n = len(self.text)
+        textList = [m for m in self.text]
+        i = 0
+        while i < n:
+            if textList[i] == '/':
                 try:
-                    temp += textList[n + 1]
+                    temp += textList[i + 1]
+                    i += 1
                 except IndexError:
                     pass
-                n += 1
-            elif textList[n] in ['*', '~']:
-                out.append(_string(temp)) if temp != '' else None
-                try:
-                    if textList[n + 1] == textList[n]:
-                        out.append(_tok(textList[n] * 2))
-                        n += 1
-                    else:
-                        out.append(_tok(textList[n]))
-                except IndexError:
-                    out.append(_tok(textList[n]))
+            elif textList[i] == '*':
+                given.append(_str(temp))
                 temp = ''
+                token = TT_B
+                try:
+                    if textList[i + 1] == '*':
+                        token = TT_I
+                        i += 1
+                except IndexError:
+                    pass
+                given.append(_tok(token))
+            elif textList[i] == '~':
+                given.append(_str(temp))
+                temp = ''
+                token = TT_H
+                try:
+                    if textList[i + 1] == '~':
+                        token = TT_U
+                        i += 1
+                except IndexError:
+                    pass
+                given.append(_tok(token))
             else:
-                temp += textList[n]
-            n += 1
-        types = {'B': 0, 'I': 0, 'H': 0, 'U': 0}
-        for i in out:
-            if isinstance(i, _tok):
-                types[i.type_] += 1
-        for i in types.values():
-            if i % 2 != 0:
-                raise Exception('An incorrect number of formatting characters were passed into the class.')
-        return out
+                temp += textList[i]
+            i += 1
+        given.append(_str(temp))
+        self.text = given
 
-    def generate_TeX(self):
-        out = ''
+    def generate_TeX(self) -> str:
+        given = ''
+        openTokens = {TT_B: False, TT_I: False, TT_H: False, TT_U: False}
+        for i in self.text:
+            if isinstance(i, _str):
+                given += i.value
+            else:
+                assert isinstance(i, _tok)
+                if openTokens[i.value]:
+                    given += '}'
+                else:
+                    given += tokenStarts[i.value]
+                openTokens[i.value] = bool((openTokens[i.value] + 1) % 2)
+        for i in openTokens.values():
+            if i:
+                raise Exception('Not enough formatting characters were inputted into the input string.')
+
         if self.align:
-            out += f'\\begin{{flush{self.align}}}\n'
-            out += f'{self.generateSyntaxed(self.text)}\n'
-            out += f'\\end{{flush{self.align}}}\\\\\n'
-        else:
-            out += f'{self.generateSyntaxed(self.text)}\\\\\n'
-        return out
+            given = f'\\begin{{flush{self.align}}}\n{given}\n\\end{{flush{self.align}}}\n'
 
-    def generateSyntaxed(self, text):
-        out = ''
-        for i in text:
-            if isinstance(i, _string):
-                out += i.text
-            else:
-                out += beginToks[i.type_] if toks[i.type_] else '}'
-                toks[i.type_] = False if toks[i.type_] else True
-        return str(out)
+        return given
 
 
-class Footnote(__main):
+class Footnote(_main):
     def __init__(self, *args, number: int = None):
         super().__init__(['hyperref'])
         self.text = ''
@@ -274,26 +286,27 @@ class Footnote(__main):
         return out
 
 
-class Columns(__main):
-    def __init__(self, columns: int, items: str or list = None, unbalanced: bool = False):
-        super().__init__()
+class Columns(_main):
+    def __init__(self, columns: int, items: list = None, unbalanced: bool = False):
+        super().__init__(['multicol'])
         self.columns = max(columns, 1)
-        self.items = items if type(items) == list else [items]
+        self.items = items if items else []
         self.unbalanced = unbalanced
 
     def add(self, item):
         self.items.append(item)
 
     def generate_TeX(self):
-        out = '\\begin{multicols'
-        out += f'*}}{{{self.columns}}}' if self.unbalanced else f'}}{{{self.columns}}}'
+        given = '\\begin{multicols'
+        given += f'*}}{{{self.columns}}}' if self.unbalanced else f'}}{{{self.columns}}}'
         for i in self.items:
-            out += i.generate_TeX()
-        out += '\\end{multicols'
-        out += '*}' if self.unbalanced else '}'
+            given += i.generate_TeX()
+        given += '\\end{multicols'
+        given += '*}' if self.unbalanced else '}'
+        return given
 
 
-class Equation(__main):
+class Equation(_main):
     def __init__(self, equation: str = '', numbered: bool = True):
         super().__init__(['amsmath']) if ('\\text' in equation or numbered is False) else super().__init__()
         self.equation = equation
@@ -307,12 +320,12 @@ class Equation(__main):
         return out
 
 
-class List(__main):
+class List(_main):
     def __init__(self, list_type: str = 'numbered', items: list = None):
         super().__init__()
         self.list_type = list_types.get(list_type)
         self.items = items
-        self.__clear_list() if items is not [] else None
+        if self.items is None: self.__clear_list()
 
     def __clear_list(self):
         self.items = []
@@ -340,10 +353,44 @@ class List(__main):
         return out
 
 
-class group(__main):
+class Table(_main):
+    def __init__(self, values: list, **kwargs):
+        super().__init__()
+        self.values = values
+        self.__dict__.update(kwargs)
+
+    def generate_TeX(self):
+        given = '\n\\begin{center}\n\\begin{tabular}{'
+        if self.format:
+            for i in self.format:
+                given += f'| {i} '
+            given += '|}\n\\hline\n'
+        else:
+            given += '| c ' * (len(self.values[0]) - 1)
+            given += '|}\n\\hline\n'
+
+        for n in self.values[0]:
+            assert isinstance(n, _main)
+            given += f'{n.generate_TeX()} & '
+        given = given[:-2]
+        given += '\\\\ \\hline\n'
+
+        for i in self.values[1:]:
+            for n in i:
+                assert isinstance(n, _main)
+                given += f'{n.generate_TeX()} & '
+            given = given[:-2]
+            given += '\\\\\n'
+
+        given += '\\hline\n\\end{tabular}\n\\end{center}\n'
+
+        return given
+
+
+class group(_main):
     def __init__(self, items: list = None):
         super().__init__()
-        self.items = items
+        self.items = items if items else []
 
     def add(self, item):
         self.items.append(item)
@@ -356,7 +403,7 @@ class group(__main):
         return out
 
 
-class line(__main):
+class line(_main):
     def __init__(self, coordinates: list, color: str = None, mark: str = None, style: str = None, label_offset: int or float = -0.2):
         super().__init__()
         self.label_offset = label_offset
@@ -385,7 +432,7 @@ class line(__main):
         return out
 
 
-class plot(__main):
+class plot(_main):
     def __init__(self, function: str, domain: tuple = None, color=None, name: str = None):
         super().__init__()
         self.function = function
@@ -405,7 +452,7 @@ class plot(__main):
         return out
 
 
-class coordinates(__main):
+class coordinates(_main):
     def __init__(self, coords: list, color: list = None, name: str = None):
         super().__init__()
         self.coords = coords
@@ -427,7 +474,7 @@ class coordinates(__main):
         return out
 
 
-class axis(__main):
+class axis(_main):
     def __init__(self, title: str = None, samples: int = 100, labels: list = [None] * 2, showTickMarks: bool = True, clip: bool = False, **kwargs):
         super().__init__(['tikz', 'pgfplots'])
         self.title = title
@@ -476,21 +523,22 @@ class axis(__main):
         return f'x-label: {self.xlab}\ny-label: {self.ylab}\nPlot(s):\n{self.plots}'
 
 
-class Code(__main):
+class Code(_main):
     def __init__(self, code: str, language: str = None):
         super().__init__(['listings'])
         self.code = code
         self.language = language
 
     def generate_TeX(self):
-        out = f'\\lstset{{language={self.language}}}\n\\begin{{lstlisting}}\n'
+        out = f'\\lstset{{language={self.language}}}\n' if self.language else ''
+        out += '\\begin{lstlisting}\n'
         out += self.code
-        out += '\\end{lstlisting}\n'
+        out += '\n\\end{lstlisting}\n'
 
         return out
 
 
-class Chemical(__main):
+class Chemical(_main):
     def __init__(self, chemical,):
         super().__init__(['mhchem'])
         self.chemical = chemical
@@ -502,7 +550,7 @@ class Chemical(__main):
         return f'{self.chemical}'
 
 
-class ChemEquation(__main):
+class ChemEquation(_main):
     def __init__(self, reactants: str or list, products: str or list, catalysts: str or list = None, conditions: str or list = None):
         super().__init__(['mhchem'])
         self.reactants = self.__StringOrList(reactants)

@@ -1,0 +1,117 @@
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{textcomp}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{soul}
+\usepackage{multicol}
+\hypersetup{colorlinks,
+citecolor = blue,
+filecolor = blue,
+linkcolor = blue,
+urlcolor = blue
+}
+\geometry{}
+
+
+\title{ETeX Documentation\\\large V0.1}
+\date{}
+\author{RosiePuddles}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+\section[Preface]{Preface}
+This package is designed to allow the user to generate \LaTeX  files and associated pdf files in a more user friendly way. Please note, however, this package is still currently heavily in development, and things will go wrong. Any bugs can be reported on the \href{https:/github.comRosiePuddlesETeX_from_pythonissues}{issues page} of the GitHub repository. You can request any features you cannot find and want adding to the package. Having said that, I hope you find this package useful and fairly easy to use as intended.\section[Base Classes]{Base Classes}
+\subsection[Document]{Document}
+\lstset{language=Python}
+\begin{lstlisting}
+class Document(*args, **kwargs) -> None
+\end{lstlisting}
+The \verb|Document| class is the main class used in ETeX. It handles all tex codegeneration, and contains all information about the document as well as the actual contents themself.\subsubsection[generate\_TeX function]{generate\_TeX function}
+\lstset{language=Python}
+\begin{lstlisting}
+Document.generate_TeX(self, _compile: bool = True, **kwargs) -> str
+\end{lstlisting}
+The \verb|generate_TeX| function is used to firstly generate the .tex file which is then compiled and the resulting .pdf file is opened. The parameter \verb|_compile| is set to \verb|False| by default. If it is changed to \verb|True|, then only the .tex file will be generated, but not compiled. For the \verb|kwargs|, you can pass in \verb|debug=True| to see the logs from pdflatex as it compiles the .tex file.
+The output .tex file name will be a formatted version of the value for the title given on instantiation of a new instance of the \verb|Document| class. Any of the following characters are removes:\begin{itemize}
+\item \$
+\item \%
+\item /
+\item \textbackslash
+\end{itemize}
+Bullet points are also formatted and turned into underscores. The resulting formatted filename is then used for all of the resulting output files.\subsubsection[add function]{add function}
+\lstset{language=Python}
+\begin{lstlisting}
+Document.add(self, item: _main) -> None:
+	self.contains.append(item)
+\end{lstlisting}
+The \verb|add| function adds a class that inherits from the class \verb|_main|\footnote{See section 2.5.1 for a full list of classes that directly or indirectly inherit from the \_main class.} to the list of contents inside an instance of the \verb|Document| class. The function is used to add items into the document.\subsubsection[new\_section function]{new\_section function}
+\lstset{language=Python}
+\begin{lstlisting}
+Document.add(self, title: str, _type: int = 0) -> None:
+	_type = _type % 3
+	self.contains.append(_section(title, _type))
+\end{lstlisting}
+The \verb|new_section| function is used to add a new section to a \verb|Document| class instance. The \verb|_type| argument is used to identify the type of section with 0 being a section, 1 being a subsection, and 2 being a subsubsection.\subsection[Text]{Text}
+\lstset{language=Python}
+\begin{lstlisting}
+class Text(self, text: str, align: str = None) -> None
+\end{lstlisting}
+The \verb|Text| class is the class used for the handling of text inside of ETeX. The class contains some general string formatting features allowing for \textbf{bold}, \textit{italic}, \hl{highlighted}, and \underline{underlined} text inside of the document. To read more on this see section 2.2.1. The text can also be aligned to either the left, center, or right using the \verb|align| argument. This will only apply to the current \verb|Text| class instance and will not be applied to any subsequent instances of the class.\subsubsection[String formatting]{String formatting}
+To format a string in ETeX, you use the * and \~{} characters. The following table shows the formatting character and the relevant format.\\
+\begin{center}
+\begin{tabular}{| c | l |}
+\hline
+Formatting character & Associated formatting \\ \hline
+* & \textbf{Bold} \\
+** & \textit{Italic} \\
+\~{} & \hl{Highlight} \\
+\~{}\~{} & \underline{Underline} \\
+\hline
+\end{tabular}
+\end{center}
+\subsection[List]{List}
+\lstset{language=Python}
+\begin{lstlisting}
+class List(self, list_type: str = 'numbered', items: list = None) -> None
+\end{lstlisting}
+The \verb|List| class is used to created lists inside of ETeX. These list can be either a numbered list or a bullet point list through the use of the \verb|list_type| argument\footnote{See section 2.3.1 for list types}. The list can also be initialised with items already inside of it, so long as the items inherit from the \verb|_main| class\footnote{See section 2.5.1 for a full list of classes that directly or indirectly inherit from the \_main class.}. The list can also be left empty upon initialisation and later on have items added to it using the \verb|add| function.\subsubsection[List types]{List types}
+To change the type of list, you can use the \verb|list_type| argument, which takes in a string of wither \verb|numbered| or \verb|bullet|, which correspond to a numbered list, or a bullet point list.\subsubsection[add function]{add function}
+\lstset{language=Python}
+\begin{lstlisting}
+List.add(self, item: _main) -> None:
+	self.items.append(item)
+	self.add_super(item.packages)
+\end{lstlisting}
+The add function adds the given item to the end of the list instance's list. The item has to inherit from the \verb|_main| class to be added. The second line of the function is part of the process of ensuing all the required packages are declared in the preamble of the .tex document.\subsection[Group]{Group}
+\subsection[\_main]{\_main}
+The \verb|_main| class is the base class for all other classes the user interfaces with and provides several important functions and alterations to base functions that are used throughout.\subsubsection[Child classes]{Child classes}
+This section provides a list of all the different child classes of the \verb|_main| class:\begin{multicols}{2}\begin{itemize}
+\item \verb|Text|
+\item \verb|Footnote|
+\item \verb|Columns|
+\item \verb|Equation|
+\item \verb|List|
+\item \verb|group|
+\item \verb|line|
+\item \verb|plot|
+\item \verb|coordinates|
+\item \verb|axis|
+\item \verb|Code|
+\item \verb|Chemical|
+\item \verb|ChemEquation|
+\end{itemize}
+\end{multicols}\subsubsection[generate\_TeX method]{generate\_TeX method}
+\lstset{language=Python}
+\begin{lstlisting}
+_main.generate_TeX(self, *args, **kwargs) -> str
+\end{lstlisting}
+The \verb|generate_TeX| method generates raises an exception if run. All classes that inherit from \verb|_main| will overwrite this method with their own method to generate their unique \LaTeX  code.\section[Maths Classes]{Maths Classes}
+\section[Plotting Classes]{Plotting Classes}
+\section[Chemistry Classes]{Chemistry Classes}
+\end{document}
