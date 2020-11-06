@@ -1,4 +1,4 @@
-from LaTeX import *
+from ETeX import *
 
 # We first instantiate the document with a title and an author #
 # This is assigned to the variable doc so we can add items to it #

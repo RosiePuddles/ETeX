@@ -1,4 +1,4 @@
-from LaTeX import *
+from ETeX.main import *
 
 doc = Document(title='ETeX Documentation', subtitle='V0.1', author='RosiePuddles', contents=True)
 doc.new_section(title='Preface')
