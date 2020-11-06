@@ -10,14 +10,14 @@ doc.add(Text('This package is designed to allow the user to generate \\LaTeX  fi
 ############################################################
 # BASE SECTIONS
 ############################################################
-doc.new_section(title='Base Classes')
+doc.new_section(title='Main Classes')
 
 # DOCUMENT
 doc.new_section(title='Document', _type=1)
 doc.add(Code('class Document(*args, **kwargs) -> None', language='Python'))
 doc.add(Text('The \\verb|Document| class is the main class used in ETeX. It handles all tex code'
              'generation, and contains all information about the document as well as the actual contents themself.'))
-# GENERATE_TEX
+#   GENERATE_TEX
 doc.new_section(title='generate\\_TeX function', _type=2)
 doc.add(Code('Document.generate_TeX(self, _compile: bool = True, **kwargs) -> str', language='Python'))
 doc.add(Text('The \\verb|generate_TeX| function is used to firstly generate the .tex file which is then compiled and the resulting .pdf file is opened.'
@@ -31,14 +31,14 @@ temp.add(Text('//'))
 temp.add(Text('\\textbackslash'))
 doc.add(temp)
 doc.add(Text('Bullet points are also formatted and turned into underscores. The resulting formatted filename is then used for all of the resulting output files.'))
-# ADD
+#   ADD
 doc.new_section(title='add function', _type=2)
 doc.add(Code('Document.add(self, item: _main) -> None:\n\tself.contains.append(item)', language='Python'))
 doc.add(Text('The \\verb|add| function adds a class that inherits from the class \\verb|_main|'))
 doc.add(Footnote('See section 2.5.1 for a full list of classes that directly or indirectly inherit from the \\_main class.'))
 doc.add(Text(' to the list of contents inside an instance of the \\verb|Document| class. The function is used'
              ' to add items into the document.'))
-# NEW_SECTION
+#   NEW_SECTION
 doc.new_section(title='new\\_section function', _type=2)
 doc.add(Code('Document.add(self, title: str, _type: int = 0) -> None:\n\t_type = _type % 3\n\tself.contains.append(_section(title, _type))', language='Python'))
 doc.add(Text('The \\verb|new_section| function is used to add a new section to a \\verb|Document| class instance.'
@@ -50,6 +50,7 @@ doc.add(Code('class Text(self, text: str, align: str = None) -> None', language=
 doc.add(Text('The \\verb|Text| class is the class used for the handling of text inside of ETeX. The class contains some general string formatting features allowing for '
              '*bold*, **italic**, ~highlighted~, and ~~underlined~~ text inside of the document. To read more on this see section 2.2.1. The text can also be aligned to either the left, center,'
              ' or right using the \\verb|align| argument. This will only apply to the current \\verb|Text| class instance and will not be applied to any subsequent instances of the class.'))
+#   STRING FORMATTING
 doc.new_section(title='String formatting', _type=2)
 doc.add(Text('To format a string in ETeX, you use the /* and \\/~{} characters. The following table shows the formatting character and the relevant format.\\\\'))
 formattingTable = [[Text('Formatting character'), Text('Associated formatting')],
@@ -58,6 +59,7 @@ formattingTable = [[Text('Formatting character'), Text('Associated formatting')]
                    [Text('\\/~{}'), Text('~Highlight~')],
                    [Text('\\/~{}\\/~{}'), Text('~~Underline~~')]]
 doc.add(Table(values=formattingTable, format=['c', 'l']))
+
 # LIST
 doc.new_section(title='List', _type=1)
 doc.add(Code('class List(self, list_type: str = \'numbered\', items: list = None) -> None', language='Python'))
@@ -67,17 +69,24 @@ doc.add(Footnote('See section 2.3.1 for list types'))
 doc.add(Text('. The list can also be initialised with items already inside of it, so long as the items inherit from the \\verb|_main| class'))
 doc.add(Footnote('See section 2.5.1 for a full list of classes that directly or indirectly inherit from the \\_main class.'))
 doc.add(Text('. The list can also be left empty upon initialisation and later on have items added to it using the \\verb|add| function.'))
+#   LIST TYPES
 doc.new_section(title='List types', _type=2)
 doc.add(Text('To change the type of list, you can use the \\verb|list_type| argument, which takes in'
              ' a string of wither \\verb|numbered| or \\verb|bullet|, which correspond to a numbered list, or a '
              'bullet point list.'))
+#   ADD
 doc.new_section(title='add function', _type=2)
 doc.add(Code('List.add(self, item: _main) -> None:\n\tself.items.append(item)\n\tself.add_super(item.packages)', language='Python'))
 doc.add(Text('The add function adds the given item to the end of the list instance\'s list. The item has to inherit from the \\verb|_main| class'
              ' to be added. The second line of the function is part of the process of ensuing all the required packages are declared '
              'in the preamble of the .tex document.'))
+
 # GROUP
 doc.new_section(title='Group', _type=1)
+doc.add(Code('class Group(self, items: list = None) -> None', language='Python'))
+doc.add(Text('The \\verb|Group| class is a holding class used for storing other classes. The primary use for this class is alongside '
+             'lists. When an item is added to a list it is added as a new item, however if the user wants to add several different '
+             'classes to a list as the same point they can put all the items into a \\verb|Group| class and add that to the list.'))
 
 # _MAIN
 doc.new_section(title='\\_main', _type=1)
@@ -92,7 +101,7 @@ types.add(Text('\\verb|Footnote|'))
 types.add(Text('\\verb|Columns|'))
 types.add(Text('\\verb|Equation|'))
 types.add(Text('\\verb|List|'))
-types.add(Text('\\verb|group|'))
+types.add(Text('\\verb|Group|'))
 types.add(Text('\\verb|line|'))
 types.add(Text('\\verb|plot|'))
 types.add(Text('\\verb|coordinates|'))

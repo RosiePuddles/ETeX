@@ -1,5 +1,5 @@
 \contentsline {section}{\numberline {1}Preface}{2}{section.1}%
-\contentsline {section}{\numberline {2}Base Classes}{2}{section.2}%
+\contentsline {section}{\numberline {2}Main Classes}{2}{section.2}%
 \contentsline {subsection}{\numberline {2.1}Document}{2}{subsection.2.1}%
 \contentsline {subsubsection}{\numberline {2.1.1}generate\_TeX function}{2}{subsubsection.2.1.1}%
 \contentsline {subsubsection}{\numberline {2.1.2}add function}{2}{subsubsection.2.1.2}%
@@ -13,6 +13,6 @@
 \contentsline {subsection}{\numberline {2.5}\_main}{4}{subsection.2.5}%
 \contentsline {subsubsection}{\numberline {2.5.1}Child classes}{4}{subsubsection.2.5.1}%
 \contentsline {subsubsection}{\numberline {2.5.2}generate\_TeX method}{4}{subsubsection.2.5.2}%
-\contentsline {section}{\numberline {3}Maths Classes}{4}{section.3}%
-\contentsline {section}{\numberline {4}Plotting Classes}{4}{section.4}%
-\contentsline {section}{\numberline {5}Chemistry Classes}{4}{section.5}%
+\contentsline {section}{\numberline {3}Maths Classes}{5}{section.3}%
+\contentsline {section}{\numberline {4}Plotting Classes}{5}{section.4}%
+\contentsline {section}{\numberline {5}Chemistry Classes}{5}{section.5}%

@@ -26,7 +26,7 @@ urlcolor = blue
 \tableofcontents
 \newpage
 \section[Preface]{Preface}
-This package is designed to allow the user to generate \LaTeX  files and associated pdf files in a more user friendly way. Please note, however, this package is still currently heavily in development, and things will go wrong. Any bugs can be reported on the \href{https:/github.comRosiePuddlesETeX_from_pythonissues}{issues page} of the GitHub repository. You can request any features you cannot find and want adding to the package. Having said that, I hope you find this package useful and fairly easy to use as intended.\section[Base Classes]{Base Classes}
+This package is designed to allow the user to generate \LaTeX  files and associated pdf files in a more user friendly way. Please note, however, this package is still currently heavily in development, and things will go wrong. Any bugs can be reported on the \href{https:/github.comRosiePuddlesETeX_from_pythonissues}{issues page} of the GitHub repository. You can request any features you cannot find and want adding to the package. Having said that, I hope you find this package useful and fairly easy to use as intended.\section[Main Classes]{Main Classes}
 \subsection[Document]{Document}
 \lstset{language=Python}
 \begin{lstlisting}
@@ -89,7 +89,11 @@ List.add(self, item: _main) -> None:
 	self.add_super(item.packages)
 \end{lstlisting}
 The add function adds the given item to the end of the list instance's list. The item has to inherit from the \verb|_main| class to be added. The second line of the function is part of the process of ensuing all the required packages are declared in the preamble of the .tex document.\subsection[Group]{Group}
-\subsection[\_main]{\_main}
+\lstset{language=Python}
+\begin{lstlisting}
+class Group(self, items: list = None)
+\end{lstlisting}
+The \verb|Group| class is a holding class used for storing other classes. The primary use for this class is alongside lists. When an item is added to a list it is added as a new item, however if the user wants to add several different classes to a list as the same point they can put all the items into a \verb|Group| class and add that to the list.\subsection[\_main]{\_main}
 The \verb|_main| class is the base class for all other classes the user interfaces with and provides several important functions and alterations to base functions that are used throughout.\subsubsection[Child classes]{Child classes}
 This section provides a list of all the different child classes of the \verb|_main| class:\begin{multicols}{2}\begin{itemize}
 \item \verb|Text|
@@ -97,7 +101,7 @@ This section provides a list of all the different child classes of the \verb|_ma
 \item \verb|Columns|
 \item \verb|Equation|
 \item \verb|List|
-\item \verb|group|
+\item \verb|Group|
 \item \verb|line|
 \item \verb|plot|
 \item \verb|coordinates|

@@ -33,7 +33,6 @@ class out:
         self.given = ''
 
     def __add__(self, other):
-        temp = self.given
         if not isinstance(other[0], type(None)):
             self.given += f'{other[1]}{other[0]}{other[2]}'
         else:
@@ -387,7 +386,7 @@ class Table(_main):
         return given
 
 
-class group(_main):
+class Group(_main):
     def __init__(self, items: list = None):
         super().__init__()
         self.items = items if items else []
