@@ -1,5 +1,7 @@
 import os
 
+__all__ = ['Document', 'Text', 'Footnote', 'Columns', 'Equation', 'List', 'Table', 'Group', 'line', 'plot', 'coordinates', 'axis', 'Code', 'Chemical', 'ChemEquation']
+
 list_types = {'numbered': 'enumerate', 'bullet': 'itemize'}
 TT_B = 'bold'  # *
 TT_I = 'italic'  # **
@@ -61,27 +63,37 @@ class _section:
         self.type = _type
 
     def generate_TeX(self):
-        name = "sub" * self.type
-        out = f'\\{name}section[{self.title}]{{{self.title}}}\n'
-        # out += f'\\label{{{name}sec:{self.title.lower().replace(" ", "_")}}}\n\n'
-        return out
+        if self.type >= 0:
+            name = "sub" * self.type
+            given = f'\n\\{name}section[{self.title}]{{{self.title}}}\n'
+            # out += f'\\label{{{name}sec:{self.title.lower().replace(" ", "_")}}}\n\n'
+        else:
+            given = f'\\part{{{self.title}}}'
+        return given
 
 
 class _package:
-    def __init__(self, name: str, additional: str = None):
+    def __init__(self, name: str, additional: str = None, postPre: str = None):
         self.name = name
         self.additional = additional
+        self.postPre = postPre
+
+    def __repr__(self):
+        given = '\\usepackage'
+        if self.additional: given += f'[{self.additional}]'
+        given += f'{{{self.name}}}'
+        return given + '\n'
 
 
 class Document:
     def __init__(self, top: int = None, bottom: int = None, left: int = None, right: int = None, **kwargs):
         self.__dict__.update(kwargs)
-        self.top = f'{top}mm' if top else None
-        self.bottom = f'{bottom}mm' if bottom else None
-        self.left = f'{left}mm' if left else None
-        self.right = f'{right}mm' if right else None
+        self.top = f'{top}cm' if top else None
+        self.bottom = f'{bottom}cm' if bottom else None
+        self.left = f'{left}cm' if left else None
+        self.right = f'{right}cm' if right else None
         self.contains = []
-        self.__preamble = [('fontenc', 'T1'), ('inputenc', 'utf8'), 'lmodern', 'textcomp', 'hyperref', 'geometry']
+        self.__preamble = [_package('fontenc', 'T1'), _package('inputenc', 'utf8'), _package('lmodern'), _package('textcomp'), _package('hyperref', postPre='\\hypersetup{colorlinks,\ncitecolor = blue,\nfilecolor = blue,\nlinkcolor = blue,\nurlcolor = blue\n}\n'), _package('geometry')]
 
     def __getattr__(self, item):
         if item in self.__dict__:
@@ -95,15 +107,13 @@ class Document:
 
         for i in self.contains:
             for n in i.packages:
-                self.__preamble.append(n) if n not in self.__preamble else None
+                self.__preamble.append(n) if n.name not in [m.name for m in self.__preamble] else None
 
         for i in self.__preamble:
-            give - self.__add_package(i)
+            give - i.__repr__()
 
-        if 'pgfplots' in self.__preamble:
-            give - '\\pgfplotsset{compat=newest}\n'
-        if 'hyperref' in self.__preamble:
-            give - '\\hypersetup{colorlinks,\ncitecolor = blue,\nfilecolor = blue,\nlinkcolor = blue,\nurlcolor = blue\n}\n'
+        for i in self.__preamble:
+            if i.postPre: give - i.postPre
 
         give - '\\geometry{'
         give += (self.top, '\ntop=', ',')
@@ -116,9 +126,12 @@ class Document:
         if self.title:
             temp = self.title
             temp += f'\\\\\\large {self.subtitle}' if self.subtitle else ''
-        if temp: give - f'\n\\title{{{temp}}}\n\\date{{}}'
-        give += (self.author, '\n\\author{',  '}')
-        give += (self.contents_title, '\\renewcommand*\\contentsname{',  '}')
+        if temp: give - f'\n\\title{{{temp}}}'
+        give - '\n\\date{'
+        give += (self.date, '', '')
+        give - '}'
+        give += (self.author, '\n\\author{', '}')
+        give += (self.contents_title, '\\renewcommand*\\contentsname{', '}')
         give - f'\n\n\\begin{{document}}\n'
         give - '\\maketitle\n'
         if self.contents: give - '\\tableofcontents\n\\newpage\n'
@@ -151,24 +164,19 @@ class Document:
 
     def add(self, item: _main):
         self.contains.append(item)
+        try:
+            self.__postPre.append(item._postPre)
+        except AttributeError:
+            pass
 
     def new_section(self, title: str, _type: int = 0):
-        _type = _type % 3
         self.contains.append(_section(title, _type))
-
-    def __add_package(self, package: str or tuple):
-        out = '\\usepackage'
-        if type(package) is tuple:
-            out += f'[{package[1]}]{{{package[0]}}}'
-        else:
-            out += f'{{{package}}}'
-        return out + '\n'
 
 
 class headFoot(_main):
     def __init__(self, style: int = 1, **kwargs):
         self.style = headings[style % (len(headings) - 1)]
-        super().__init__(['fancyhdr']) if self.style == 'fancy' else super().__init__()
+        super().__init__([_package('fancyhdr')]) if self.style == 'fancy' else super().__init__()
         if self.style == 'myheadings':
             self.kargs = kwargs
 
@@ -197,11 +205,11 @@ class Text(_main):
         self.text = text
         self._LexerLike()
         self.align = align
-        packages = ['ragged2e'] if self.align else []
+        packages = [_package('ragged2e')] if self.align else []
         for i in self.text:
             if isinstance(i, _tok):
                 if i.value == TT_H:
-                    packages += ['hyperref', 'soul']
+                    packages += [_package('color, soul')]
                     break
         super().__init__(packages)
 
@@ -271,7 +279,7 @@ class Text(_main):
 
 class Footnote(_main):
     def __init__(self, *args, number: int = None):
-        super().__init__(['hyperref'])
+        super().__init__()
         self.text = ''
         for arg in args:
             self.text += str(arg)
@@ -287,13 +295,14 @@ class Footnote(_main):
 
 class Columns(_main):
     def __init__(self, columns: int, items: list = None, unbalanced: bool = False):
-        super().__init__(['multicol'])
+        super().__init__([_package('multicol')])
         self.columns = max(columns, 1)
         self.items = items if items else []
         self.unbalanced = unbalanced
 
-    def add(self, item):
+    def add(self, item: _main):
         self.items.append(item)
+        self.add_super(item.packages)
 
     def generate_TeX(self):
         given = '\\begin{multicols'
@@ -307,7 +316,7 @@ class Columns(_main):
 
 class Equation(_main):
     def __init__(self, equation: str = '', numbered: bool = True):
-        super().__init__(['amsmath']) if ('\\text' in equation or numbered is False) else super().__init__()
+        super().__init__([_package('amsmath')]) if ('\\text' in equation or numbered is False) else super().__init__()
         self.equation = equation
         self.numbered = '' if numbered else '*'
 
@@ -452,30 +461,35 @@ class plot(_main):
 
 
 class coordinates(_main):
-    def __init__(self, coords: list, color: list = None, name: str = None):
+    def __init__(self, coords: list, color: list = None, name: str = None, order: bool = False, **kwargs):
         super().__init__()
         self.coords = coords
         self.name = name
         self.color = color
         self.color = f'{{rgb:red,{color[0]};green,{color[1]};blue,{color[2]}}}' if self.color is not None else None
+        self.__dict__.update(kwargs)
 
-        self.generate_TeX()
+        if order: self.coords.sort(key=self.__order)
 
     def generate_TeX(self):
         out = f'\\addplot['
-        out += f'color={self.color}' if self.color else ''
-        out += ']\ncoordinates {'
+        out += f'\ncolor={self.color},' if self.color else ''
+        if self.points: out += f'\nmark={self.points},'
+        out = out[:-1] + ']\ncoordinates {'
         for i in self.coords:
-            out += f'{i}\n'
+            out += f'({i[0]}, {i[1]})\n'
         out += '};\n'
         out += f'\\addlegendentry{{{self.name}}}\n' if self.name else ''
 
         return out
 
+    def __order(self, e):
+        return e[0]
+
 
 class axis(_main):
     def __init__(self, title: str = None, samples: int = 100, labels: list = [None] * 2, showTickMarks: bool = True, clip: bool = False, **kwargs):
-        super().__init__(['tikz', 'pgfplots'])
+        super().__init__([_package('tikz'), _package('pgfplots', postPre='\\pgfplotsset{compat=newest}\n')])
         self.title = title
         self.width = f'{kwargs["width"]}cm' if 'width' in kwargs else None
         self.height = f'{kwargs["height"]}cm' if 'height' in kwargs else None
@@ -489,33 +503,36 @@ class axis(_main):
         self.showTickMarks = showTickMarks
         self.clip = clip
         self.plots = []
+        self.__dict__.update(kwargs)
 
     def generate_TeX(self):
-        out = '\\begin{center}\n\\begin{tikzpicture}\n\\begin{axis}[\naxis lines=left,'
-        out += f'\nclip={str(self.clip).lower()},'
-        out += f'\nsamples={self.samples},' if self.samples else ''
-        out += f'\nxlabel={self.xlab},' if self.xlab else ''
-        out += f'\nylabel={self.ylab},' if self.ylab else ''
-        out += f'\nxmin={self.xmin},' if self.xmin is not None else ''
-        out += f'\nxmax={self.xmax},' if self.xmax is not None else ''
-        out += f'\nymin={self.ymin},' if self.ymin is not None else ''
-        out += f'\nymax={self.ymax},' if self.ymax is not None else ''
-        out += '\nticks=none,' if not self.showTickMarks else ''
-        out += f'\nwidth={self.width},' if self.width else ''
-        out += f'\nheight={self.height},' if self.height else ''
-        out += f'\ntitle={self.title}' if self.title else ''
-        out += ']\n'
+        given = '\\begin{center}\n\\begin{tikzpicture}\n\\begin{axis}[\naxis lines=left,'
+        given += f'\nclip={str(self.clip).lower()},'
+        given += f'\nsamples={self.samples},' if self.samples else ''
+        given += f'\nxlabel={{{self.xlab}}},' if self.xlab else ''
+        given += f'\nylabel={{{self.ylab}}},' if self.ylab else ''
+        given += f'\nxmin={self.xmin},' if self.xmin is not None else ''
+        given += f'\nxmax={self.xmax},' if self.xmax is not None else ''
+        given += f'\nymin={self.ymin},' if self.ymin is not None else ''
+        given += f'\nymax={self.ymax},' if self.ymax is not None else ''
+        given += '\nticks=none,' if not self.showTickMarks else ''
+        given += f'\nwidth={self.width}cm,' if self.width else ''
+        given += f'\nheight={self.height}cm,' if self.height else ''
+        given += f'\ntitle={{{self.title}}},' if self.title else ''
+        if self.xTick: given += f'\nxtick={self.xTick},'
+        if self.xMinorTick: given += f'\nminor xtick={self.xMinorTick},'
+        given = given[:-1] + '\n]\n'
 
         # axis lines=middle tag inside the [] section option #
 
         for i in self.plots:
-            out += i.generate_TeX()
+            given += i.generate_TeX()
 
-        out += '\\end{axis}\n\\end{tikzpicture}\n\\end{center}\n'
+        given += '\\end{axis}\n\\end{tikzpicture}\n\\end{center}\n'
 
-        return out
+        return given
 
-    def add_plot(self, new_plot: plot or line):
+    def add_plot(self, new_plot: plot or line or coordinates):
         self.plots.append(new_plot)
 
     def __repr__(self):
@@ -524,22 +541,24 @@ class axis(_main):
 
 class Code(_main):
     def __init__(self, code: str, language: str = None):
-        super().__init__(['listings'])
+        super().__init__([_package('xcolor', postPre='\\definecolor{codegreen}{rgb}{0,0.6,0}\n\\definecolor{codefunc}{rgb}{0.9.1,0.471,0.2}\n'),
+                          _package('listings', postPre='\\lstdefinestyle{mystyle}{\ncommentstyle=\\color{codegreen},\nkeywordstyle=\\color{codefunc},\nstringstyle=\\color{codegreen},'
+                                                       '\nbasicstyle=\\ttfamily\\footnotesize\n}\\lstset{style=mystyle}\n')])
         self.code = code
         self.language = language
 
     def generate_TeX(self):
-        out = f'\\lstset{{language={self.language}}}\n' if self.language else ''
-        out += '\\begin{lstlisting}\n'
-        out += self.code
-        out += '\n\\end{lstlisting}\n'
+        given = f'\\lstset{{language={self.language}}}\n' if self.language else ''
+        given += '\\begin{lstlisting}\n'
+        given += self.code
+        given += '\n\\end{lstlisting}\n'
 
-        return out
+        return given
 
 
 class Chemical(_main):
-    def __init__(self, chemical,):
-        super().__init__(['mhchem'])
+    def __init__(self, chemical, ):
+        super().__init__([_package('mhchem')])
         self.chemical = chemical
 
     def generate_TeX(self):
@@ -551,7 +570,7 @@ class Chemical(_main):
 
 class ChemEquation(_main):
     def __init__(self, reactants: str or list, products: str or list, catalysts: str or list = None, conditions: str or list = None):
-        super().__init__(['mhchem'])
+        super().__init__([_package('mhchem')])
         self.reactants = self.__StringOrList(reactants)
         self.products = self.__StringOrList(products)
         self.catalysts = self.__StringOrList(catalysts)
