@@ -1,24 +1,36 @@
 from ETeX import _main, _package, _handler
 
+__all__ = ['Plot', 'Coordinates']
+
+plotCall = {'domain': ('domain=', ':', ''), 'color': ('color=', '')}
+
 
 class Plot(_main):
-    def __init__(self, function: str, domain: tuple = None, color=None, name: str = None):
+    def __init__(self, function: str, *args, **kwargs):
         super().__init__()
         self.function = function
-        self.name = name
-        self.color = color
-        self.domain = domain
+        self.__dict__.update(kwargs)
 
         self.generate_TeX()
 
     def generate_TeX(self):
-        out = f'\\addplot['
-        out += f'domain={self.domain[0]}:{self.domain[1]}, ' if self.domain else ''
-        out += f'color={self.color}, ' if self.color else ''
-        out += f']\n{{{self.function}}};\n'
-        out += f'\\addlegendentry{{{self.name}}}\n' if self.name else ''
+        give = f'\\addplot['
+        temp = dict(self.__dict__.items())
+        for i in temp.keys():
+            if i in plotCall.keys():
+                if isinstance(temp[i], str):
+                    give += f'{plotCall[i][0]}{temp[i]}{plotCall[i][1]},\n'
+                elif isinstance(temp[i], tuple):
+                    give += f'{plotCall[i][0]}'
+                    for n in range(len(temp[i])):
+                        give += f'{temp[i][n]}{plotCall[i][n+1]}'
+                    if len(plotCall[i][-1]) != 0: give = give[:-len(plotCall[i][-1])]
+                    give += f'{plotCall[i][-1]},\n'
+        give += f']\n{{{self.function}}};\n'
+        if 'name' in temp.keys():
+            give += f'\\addlegendentry{{{self.name}}}\n'
 
-        return out
+        return give
 
 
 class Coordinates(_main):
@@ -50,7 +62,7 @@ class Coordinates(_main):
 
 class Axis(_main):
     def __init__(self, title: str = None, samples: int = 100, labels: list = [None] * 2, showTickMarks: bool = True, clip: bool = False, **kwargs):
-        super().__init__([_package('tikz'), _package('pgfplots', postPre='\\pgfplotsset{compat=newest}\n')])
+        super().__init__([_package('tikz'), _package('pgfplots', postPre='\\pgfplotsset{compat=newest} \n')])
         self.title = title
         self.width = f'{kwargs["width"]}cm' if 'width' in kwargs else None
         self.height = f'{kwargs["height"]}cm' if 'height' in kwargs else None

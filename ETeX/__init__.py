@@ -20,7 +20,6 @@ class _main:
             return self.__getattr__(item)
 
     def add_super(self, new_packages: list):
-        print(self.packages)
         for i in new_packages:
             self.packages.append(i) if i not in self.packages else None
 
@@ -157,7 +156,7 @@ class Document:
         temp = self.title
         for i in ["$", "%", "/", "\\"]:
             temp = temp.replace(i, "")
-        temp = temp.replace('.', '_')
+        temp = temp.replace(' ', '_').replace('.', '_')
 
         katex = open(f'{temp}.tex', "w+")
         katex.truncate()
@@ -249,11 +248,13 @@ class Text(_main):
         textList = [m for m in self.text]
         i = 0
         while i < n:
-            if textList[i] == '\\':
-                if textList[i+1] == '/':
-                    i += 2
+            try:
+                if textList[i] == '\\' and textList[i + 1] == '/':
+                    i += 1
                     temp += '\\\\\n'
-            elif textList[i] == '/':
+            except IndexError:
+                pass
+            if textList[i] == '/':
                 try:
                     temp += textList[i + 1]
                     i += 1
@@ -288,7 +289,6 @@ class Text(_main):
         self.text = given
 
     def generate_TeX(self) -> str:
-        print(self.packages)
         given = ''
         openTokens = {TT_B: False, TT_I: False, TT_H: False, TT_U: False}
         for i in self.text:
@@ -463,15 +463,13 @@ class line(_main):
 
 
 class Code(_main):
-    def __init__(self, code: str, language: str = None):
+    def __init__(self, code: str, language: str = 'text'):
         super().__init__([_package('minted')])
         self.code = code
         self.language = language
 
     def generate_TeX(self):
-        given = '\\begin{minted}'
-        if self.language: given += f'{{{self.language}}}'
-        given += '\n'
+        given = f'\\begin{{minted}}[breaklines=true]{{{self.language}}}\n'
         given += self.code
         given += '\n\\end{minted}\n'
 

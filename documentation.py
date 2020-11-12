@@ -2,9 +2,10 @@ from ETeX import *
 
 doc = Document(title='ETeX Documentation', subtitle='V0.1', author='RosiePuddles', contents=True)
 doc.new_section(title='Preface')
-doc.add(Text('This package is designed to allow the user to generate \\LaTeX  files and associated pdf files in a more user friendly way. '
+doc.add(Text('This package is designed to allow the user to generate \\LaTeX\\ files and associated pdf files in a more user friendly way. '
              'Please note, however, this package is still currently heavily in development, and things will go wrong. Any bugs can be reported on '
-             'the \\href{https://github.com/RosiePuddles/ETeX_from_python/issues}{issues page} of the GitHub repository. You can request any features you cannot find and want adding to the package.'
+             'the \\href{https:////github.com//RosiePuddles//ETeX\\_from\\_python//issues}{issues page} of the GitHub repository. You can request any features you cannot find and want adding to the package.'
+             ' Having said that, I hope you find this package useful and fairly easy to use as intended.\\\\\nPlease note that every class inherits from the '
              ' Having said that, I hope you find this package useful and fairly easy to use as intended.\\\\\nPlease note that every class inherits from the '
              '\\verb|_main| class unless specified otherwise. Each class that inherits from \\verb|_main| may overwrite methods defined in the \\verb|_main| class. If '
              'a class does overwrite a predefined method this will be documented, otherwise there will be no specific documentation if the method is inherited.'))
@@ -93,7 +94,7 @@ doc.add(Text('The \\verb|Text| class is the class used for the handling of text 
              ' or right using the \\verb|align| argument. This will only apply to the current \\verb|Text| class instance and will not be applied to any subsequent instances of the class.'))
 #   STRING FORMATTING
 doc.new_section(title='Inbuilt formatting', _type=2)
-doc.add(Text('To format a string in ETeX, you use the /* and \\/~{} characters. The following table shows the formatting character and the relevant format.\/'))
+doc.add(Text('To format a string in ETeX, you use the /* and \\ /~{} characters. The following table shows the formatting character and the relevant format.\/'))
 formattingTable = [[Text('Formatting character'), Text('Associated formatting')],
                    [Text('/*'), Text('*Bold*')],
                    [Text('/*/*'), Text('**Italic**')],
@@ -103,7 +104,7 @@ doc.add(Table(values=formattingTable, format=['c', 'l']))
 #   LATEX COMMANDS
 doc.new_section(title='Extra formatting', _type=2)
 doc.add(Text('Withing the text environment regular \\LaTeX  commands can be used. Some useful examples are given below:'))
-doc.add(List(list_type='bullet', items=[Text('{\\textbackslash}verb$\\mid${foo}$\\mid$ produces text in a code-like font as seen below:\/\verb|foo|'),
+doc.add(List(list_type='bullet', items=[Text('{\\textbackslash}verb$\\mid${foo}$\\mid$ produces text in a code-like font as seen below:\/\\verb|foo|'),
                                         Text('\\$\\\\The \\$ character allows you to write inline maths equations such as the example below:\/'
                                              '\\$2x+y\\^{}3=-1\\$ $\\rightarrow\\ 2x+y^3=-1$')]))
 
@@ -172,11 +173,19 @@ options.add(Text('\\verb|showTickMarks: bool|\\\\This bool controls weather or n
 options.add(Text('\\verb|clip: bool|\\\\This bool controls weather or not the plots can be clipped to fit within the axis. This is set to \\verb|False| by default.'))
 doc.add(options)
 doc.new_section(title='add\\_plot method', _type=2)
-doc.add(Code('Axis.add_plot(self, new_plot: plot or coordinates) -> None'))
+doc.add(Code('Axis.add_plot(self, new_plot: plot or coordinates) -> None', language='python'))
 doc.add(Text('The \\verb|add_plot| method adds a plot to the current \\verb|Axis| instance. The plot must be an instance of either a \\verb|plot| or \\verb|coordinates| class.'))
 # Plot
 doc.new_section(title='Plot', _type=1)
-doc.add(Code('class Plot(_main)\n\tdef __init__(self, function: str, domain: tuple = None, color=None, name: str = None) -> None', language='python'))
+doc.add(Code('class Plot(_main)\n\tdef __init__(self, function: str, *args, **kwargs) -> None', language='python'))
+doc.add(Text('The \\verb|Plot| class is used for plotting mathematically defined functions. These then have to be added '
+             'to an \\verb|Axis| class to be shown. The class has several options for the presentation of the function, which'
+             ' are listed below:'))
+doc.add(List(list_type='bullet', items=[Text('\\verb|domain: tuple|\\\\This controls the domain of the function. '
+                                             'It must be a tuple with two values in in ascending order, for example '
+                                             '(1,5).'),
+                                        Text('\\verb|color: str|\\\\This sets the colour of the plot. this colour must either be'
+                                             ' native to \\LaTeX\\ or defined in the \\verb|DocumentSettings| class\\footnote{Soon to be added}.')]))
 ############################################################
 # CHEMISTRY SECTIONS
 ############################################################
