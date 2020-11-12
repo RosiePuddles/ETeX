@@ -140,6 +140,8 @@ doc.add(Text('The \\verb|Columns| class is used to add columns to the document. 
 # MATHS SECTIONS
 ############################################################
 doc.new_section(title='Maths Classes')
+doc.new_section(title='Equation', _type=1)
+########################################################################################################################
 
 
 ############################################################
@@ -186,8 +188,17 @@ doc.add(List(list_type='bullet', items=[Text('\\verb|domain: tuple|\\\\This cont
                                              '(1,5).'),
                                         Text('\\verb|color: str|\\\\This sets the colour of the plot. this colour must either be'
                                              ' native to \\LaTeX\\ or defined in the \\verb|DocumentSettings| class\\footnote{Soon to be added}.')]))
+doc.new_section(title='Coordinates', _type=1)
+########################################################################################################################
+
 ############################################################
 # CHEMISTRY SECTIONS
 ############################################################
 doc.new_section(title='Chemistry Classes')
+doc.add(Text('This section is for classes contained within \\verb|ETeX.chemistry|. All classes inherit from \\verb|_main| '
+             'unless specified otherwise.'))
+doc.new_section(title='Chemical', _type=1)
+doc.new_section(title='ChemEquation', _type=1)
+doc.new_section(title='Chromatography', _type=1)
+########################################################################################################################
 doc.generate_TeX(debug=True)
