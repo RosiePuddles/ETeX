@@ -27,7 +27,7 @@ class _main:
         return self.packages
 
     def generate_TeX(self):
-        raise Exception(f'{print(type(self).__name__)} does not have a generate_TeX method!')
+        raise Warning(f'{print(type(self).__name__)} does not have a generate_TeX method!')
 
 
 class _handler(_main):
@@ -379,12 +379,11 @@ class List(_handler):
         out += f'\\end{{{self.list_type}}}\n'
         return out
 
-    def __repr__(self):
-        out = 'List > [\n'
-        for i in self.items:
-            out += f'{i}\n'
-        out += ']'
-        return out
+    def add(self, item: _main):
+        if item != self:
+            super().add(item=item)
+        else:
+            raise Warning('Cannot add list to itself. Please don\'t try to make an infinity.')
 
 
 class Table(_main):
@@ -400,7 +399,7 @@ class Table(_main):
                 given += f'| {i} '
             given += '|}\n\\hline\n'
         else:
-            given += '| c ' * (len(self.values[0]) - 1)
+            given += '| c ' * (len(self.values[0]))
             given += '|}\n\\hline\n'
 
         for n in self.values[0]:
