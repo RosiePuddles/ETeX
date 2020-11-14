@@ -9,6 +9,7 @@ TT_H = 'highlight'  # ~
 TT_U = 'underline'  # ~~
 tokenStarts = {TT_B: '\\textbf{', TT_I: '\\textit{', TT_H: '\\hl{', TT_U: '\\underline{'}
 headings = ['empty', 'plain', 'headings', 'myheadings', 'fancy']
+tableFormat = {'<': 'mergeLeft', '>': 'mergeRight', '/^': 'mergeUp', '/V': 'mergeDown'}
 
 
 class _main:
@@ -364,6 +365,7 @@ class List(_handler):
         self.list_type = list_types.get(list_type)
         self.items = items
         if self.items is None: self.__clear_list()
+        self.__length = max([len(n) for n in self.items])
 
     def __clear_list(self):
         self.items = []
@@ -391,8 +393,14 @@ class Table(_main):
         super().__init__()
         self.values = values
         self.__dict__.update(kwargs)
+        try:
+            if len(self.values[0]) == 0:
+                raise Exception('The table cannot be left blank! Please enter items into the list.')
+        except IndexError:
+            raise Exception('The table cannot be left blank! Please enter items into the list.')
 
     def generate_TeX(self):
+        self.tempTable = []
         given = '\n\\begin{center}\n\\begin{tabular}{'
         if self.format:
             for i in self.format:
@@ -402,22 +410,72 @@ class Table(_main):
             given += '| c ' * (len(self.values[0]))
             given += '|}\n\\hline\n'
 
-        for n in self.values[0]:
-            assert isinstance(n, _main)
-            given += f'{n.generate_TeX()} & '
-        given = given[:-2]
-        given += '\\\\ \\hline\n'
-
-        for i in self.values[1:]:
-            for n in i:
-                assert isinstance(n, _main)
-                given += f'{n.generate_TeX()} & '
-            given = given[:-2]
-            given += '\\\\\n'
+        self.values = [[n.generate_TeX() if isinstance(n, _main) else str(n) for n in i] for i in self.values]
+        i = 0
+        n = 0
+        while i < len(self.values):
+            self.tempTable.append([])
+            while n < len(self.values[i]):
+                if self.values[i][n] in list(tableFormat.keys()):
+                    method = getattr(self, tableFormat[self.values[i][n]])
+                    n += method((i, n))
+                else:
+                    self.noSpecialFormat((i, n))
+                n += 1
+            i += 1
+            n = 0
+        print(self.tempTable)
 
         given += '\\hline\n\\end{tabular}\n\\end{center}\n'
 
         return given
+
+    def mergeUp(self, index: tuple):
+        pass
+
+    def mergeDown(self, index: tuple):
+        pass
+
+    def mergeLeft(self, index: tuple):
+        length = 0
+        while True:
+            try:
+                if self.values[index[0]][index[1] + length] == '<':
+                    length += 1
+                else:
+                    break
+            except IndexError:
+                break
+        mainText = self.values[index[0]][index[1] - 1] if index[1] > 0 else ''
+        try:
+            self.tempTable[index[0]][-1] = f'\\multicol{{{length + 1}}}{{{mainText}}}'
+        except IndexError:
+            self.tempTable[index[0]].append(f'\\multicol{{{length}}}{{{mainText}}}')
+
+        return length - 1
+
+
+    def mergeRight(self, index: tuple):
+        length = 0
+        while True:
+            try:
+                if self.values[index[0]][index[1] + length] == '>':
+                    length += 1
+                else:
+                    break
+            except IndexError:
+                break
+        try:
+            mainText = self.values[index[0]][index[1] + length]
+        except IndexError:
+            mainText = ''
+            length -= 1
+        self.tempTable[index[0]].append(f'\\multicol{{{length + 1}}}{{{mainText}}}')
+
+        return length
+
+    def noSpecialFormat(self, index: tuple):
+        self.tempTable[index[0]].append(self.values[index[0]][index[1]])
 
 
 class Group(_handler):
