@@ -257,6 +257,8 @@ class Text(_main):
                 pass
             if textList[i] == '/':
                 try:
+                    if textList[i + 1] in ['V', '^']:
+                        temp += '/'
                     temp += textList[i + 1]
                     i += 1
                 except IndexError:
@@ -425,6 +427,7 @@ class Table(_main):
             i += 1
             n = 0
         print(self.tempTable)
+        print('\n\n' + ' \\\\\n'.join([' & '.join([str(n) for n in i]) for i in self.tempTable]))
 
         given += '\\hline\n\\end{tabular}\n\\end{center}\n'
 
@@ -434,7 +437,23 @@ class Table(_main):
         pass
 
     def mergeDown(self, index: tuple):
-        pass
+        height = 0
+        while True:
+            try:
+                if self.values[index[0] + height][index[1]] == '/V':
+                    height += 1
+                else:
+                    break
+            except IndexError:
+                break
+        try:
+            mainText = self.values[index[0] + height][index[1]]
+        except IndexError:
+            mainText = ''
+
+        self.tempTable[index[0] + height].append(f'\\multirow{{{height + 1}}}{{{mainText}}}')
+
+        return 0
 
     def mergeLeft(self, index: tuple):
         length = 0
