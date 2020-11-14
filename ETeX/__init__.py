@@ -34,7 +34,9 @@ class _handler(_main):
     def __init__(self, packages: list = None):
         super().__init__(packages) if packages else super().__init__()
 
-    def add(self, item: _main):
+    def add(self, item):
+        if not isinstance(item, _main):
+            item = Text(str(item))
         self.items.append(item)
         self.add_super(item.packages)
 
@@ -174,7 +176,9 @@ class Document:
         temp = temp.replace(" ", "\ ")
         os.system(f'open ./{temp}.pdf')
 
-    def add(self, item: _main):
+    def add(self, item):
+        if not isinstance(item, _main):
+            item = Text(str(item))
         self.contains.append(item)
         try:
             self.__postPre.append(item._postPre)
@@ -379,7 +383,7 @@ class List(_handler):
         out += f'\\end{{{self.list_type}}}\n'
         return out
 
-    def add(self, item: _main):
+    def add(self, item):
         if item != self:
             super().add(item=item)
         else:
