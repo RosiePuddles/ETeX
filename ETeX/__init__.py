@@ -62,14 +62,14 @@ class out:
         return self.given
 
 
-class DocumentSettings:
+class DocumentSettings(_main):
     # TODO: Add in all the different options
     sizeOpts = ['a4', 'a5', 'b5', 'executive', 'legal', 'letter']
 
     def __init__(self, **kwargs):
         # TODO: Process the kwargs first THEN add them into the the dictionary
-        self.__dict__.update(kwargs)
-        self.__checkSettings()
+        packages = self.__checkSettings(kwargs)
+        super().__init__(packages)
 
     def __getattr__(self, item):
         if item in self.__dict__:
@@ -77,29 +77,29 @@ class DocumentSettings:
         else:
             return _key
 
-    def __checkSettings(self):
-        deleteMe = []
-        for i in range(len(self.__dict__.items())):
-            if list(self.__dict__.keys())[i] in DocSettingsOpt:
+    def __checkSettings(self, toProcess) -> list:
+        packages = []
+        for i in list(toProcess.items()):
+            if i[0] in DocSettingsOpt:
                 # TODO: Add in all methods that can be referenced from here
                 #       See the `DocSettingsOpt` list for all option names.
-                method = getattr(self, f'check_{list(self.__dict__.keys())[i]}')
-                temp = method(i)
-                if not isinstance(temp, type(None)): deleteMe.append(temp)
-        #  TODO: Make this work... somehow...
-        deleteMe.reverse()
-        for i in deleteMe:
-            self.__dict__.keys().__delattr__(list(self.__dict__.keys())[i])
+                method = getattr(self, f'check_{i[0]}')
+                packages.append(method(i)) if method(i) is not None else None
+
+        return packages
 
     def check_size(self, item):
         if item[1] in self.sizeOpts:
-            self.__dict__[item[0]] = f'{item[1]}paper'
+            self.__dict__.update({'size': f'{item[1]}paper'})
         return None
 
     def check_fontSize(self, item):
-        self.__dict__[list(self.__dict__.keys())[item]] = min(max(int(list(self.__dict__.values())[item]), 1), 100)
-        return item
-
+        item = (item[0], max(min(int(item[1]), 100), 1))
+        if item[1] in [10, 11, 12]:
+            self.__dict__.update({'fontSize': item[1]})
+        else:
+            return _package('scrextend', f'fontsize={item[1]}pt')
+        return None
 
 
 class _section:
