@@ -1,4 +1,5 @@
 import os
+from secrets import token_urlsafe as key
 
 __all__ = ['Document', 'Text', 'Footnote', 'Columns', 'Equation', 'List', 'Table', 'Group', 'line', 'Code', 'Chemical', 'ChemEquation']
 
@@ -9,6 +10,8 @@ TT_H = 'highlight'  # ~
 TT_U = 'underline'  # ~~
 tokenStarts = {TT_B: '\\textbf{', TT_I: '\\textit{', TT_H: '\\hl{', TT_U: '\\underline{'}
 headings = ['empty', 'plain', 'headings', 'myheadings', 'fancy']
+DocSettingsOpt = ['size', 'fontSize', 'top', 'bottom', 'left', 'right', 'colors']
+_key = key(20)
 
 
 class _main:
@@ -59,11 +62,44 @@ class out:
         return self.given
 
 
-class _docSettings:
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
+class DocumentSettings:
+    # TODO: Add in all the different options
+    sizeOpts = ['a4', 'a5', 'b5', 'executive', 'legal', 'letter']
 
-    # def get
+    def __init__(self, **kwargs):
+        # TODO: Process the kwargs first THEN add them into the the dictionary
+        self.__dict__.update(kwargs)
+        self.__checkSettings()
+
+    def __getattr__(self, item):
+        if item in self.__dict__:
+            return item
+        else:
+            return _key
+
+    def __checkSettings(self):
+        deleteMe = []
+        for i in range(len(self.__dict__.items())):
+            if list(self.__dict__.keys())[i] in DocSettingsOpt:
+                # TODO: Add in all methods that can be referenced from here
+                #       See the `DocSettingsOpt` list for all option names.
+                method = getattr(self, f'check_{list(self.__dict__.keys())[i]}')
+                temp = method(i)
+                if not isinstance(temp, type(None)): deleteMe.append(temp)
+        #  TODO: Make this work... somehow...
+        deleteMe.reverse()
+        for i in deleteMe:
+            self.__dict__.keys().__delattr__(list(self.__dict__.keys())[i])
+
+    def check_size(self, item):
+        if item[1] in self.sizeOpts:
+            self.__dict__[item[0]] = f'{item[1]}paper'
+        return None
+
+    def check_fontSize(self, item):
+        self.__dict__[list(self.__dict__.keys())[item]] = min(max(int(list(self.__dict__.values())[item]), 1), 100)
+        return item
+
 
 
 class _section:
@@ -368,6 +404,7 @@ class List(_handler):
         self.list_type = list_types.get(list_type)
         self.items = items
         if self.items is None: self.__clear_list()
+        self.items = [n if isinstance(n, _main) else Text(str(n)) for n in self.items]
 
     def __clear_list(self):
         self.items = []
@@ -427,7 +464,7 @@ class Table(_main):
 class Group(_handler):
     def __init__(self, items: list = None):
         super().__init__()
-        self.items = items if items else []
+        self.items = [n if isinstance(n, _main) else Text(str(n)) for n in items] if items else []
 
     def generate_TeX(self):
         out = ''
