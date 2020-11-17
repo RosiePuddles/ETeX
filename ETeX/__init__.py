@@ -179,8 +179,11 @@ class _package:
         given = '\\usepackage'
         if self.additional: given += f'[{self.additional}]'
         given += f'{{{self.name}}}\n'
-        if self.postPre: given += f'{self.postPre}\n'
-        return given + '\n'
+        return given
+
+
+def sortPackages(e):
+    return e.name
 
 
 class Document:
@@ -197,8 +200,6 @@ class Document:
     def __getattr__(self, item):
         if item in self.__dict__:
             return self.__getattr__(item)
-        else:
-            return _key
 
     def generate_TeX(self, _compile: bool = True, **kwargs):
         if self.contains is []:
@@ -209,7 +210,17 @@ class Document:
         for i in self.contains:
             for n in i.packages:
                 if not isinstance(n, type(None)):
-                    self.__preamble.append(n) if n.name not in [m.name for m in self.__preamble] else None
+                    self.__preamble.append(n)
+
+        tempHolding = []
+        self.__preamble.sort(key=sortPackages)
+        for i in range(len(self.__preamble) - 1):
+            if self.__preamble[i].name == self.__preamble[i + 1].name:
+                self.__preamble[i + 1].additional += f'\n{self.__preamble[i].additional}'
+                self.__preamble[i + 1].postPre += f'\n{self.__preamble[i].postPre}'
+            else:
+                tempHolding.append(self.__preamble[i])
+        tempHolding.append(self.__preamble[i])
 
         for i in self.__preamble:
             give - i.__repr__()
