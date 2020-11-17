@@ -14,6 +14,10 @@ DocSettingsOpt = ['size', 'fontSize', 'top', 'bottom', 'left', 'right', 'colors'
 _key = key(20)
 
 
+def sortPackages(e):
+    return e.name
+
+
 class _main:
     def __init__(self, Packages: list = None):
         self.packages = Packages if Packages else [None]
@@ -182,10 +186,6 @@ class _package:
         return given
 
 
-def sortPackages(e):
-    return e.name
-
-
 class Document:
     def __init__(self, top: int = None, bottom: int = None, left: int = None, right: int = None, **kwargs):
         self.__dict__.update(kwargs)
@@ -220,7 +220,7 @@ class Document:
                 self.__preamble[i + 1].postPre += f'\n{self.__preamble[i].postPre}'
             else:
                 tempHolding.append(self.__preamble[i])
-        tempHolding.append(self.__preamble[i])
+        tempHolding.append(self.__preamble[-1])
 
         for i in self.__preamble:
             give - i.__repr__()
