@@ -10,7 +10,7 @@ TT_H = 'highlight'  # ~
 TT_U = 'underline'  # ~~
 tokenStarts = {TT_B: '\\textbf{', TT_I: '\\textit{', TT_H: '\\hl{', TT_U: '\\underline{'}
 headings = ['empty', 'plain', 'headings', 'myheadings', 'fancy']
-DocSettingsOpt = ['size', 'fontSize', 'top', 'bottom', 'left', 'right', 'colors']
+DocSettingsOpt = ['size', 'fontSize', 'top', 'bottom', 'left', 'right', 'colors', 'portrait']
 _key = key(20)
 
 
@@ -63,11 +63,12 @@ class out:
 
 
 class DocumentSettings(_main):
-    # TODO: Add in all the different options
-    sizeOpts = ['a4', 'a5', 'b5', 'executive', 'legal', 'letter']
+    __preDocClass = ['size', 'portrait', 'fontSize']
+    __sizeOpts = ['a4', 'a5', 'b5', 'executive', 'legal', 'letter']
+    __colorLengths = [0, 1, 1, 3, 4]
+    __colorTypes = ['gray', '', ('RGB', 'rgb'), 'cmyk']
 
     def __init__(self, **kwargs):
-        # TODO: Process the kwargs first THEN add them into the the dictionary
         packages = self.__checkSettings(kwargs)
         super().__init__(packages)
 
@@ -79,18 +80,28 @@ class DocumentSettings(_main):
 
     def __checkSettings(self, toProcess) -> list:
         packages = []
+        geometry = True
         for i in list(toProcess.items()):
             if i[0] in DocSettingsOpt:
-                # TODO: Add in all methods that can be referenced from here
-                #       See the `DocSettingsOpt` list for all option names.
-                method = getattr(self, f'check_{i[0]}')
-                packages.append(method(i)) if method(i) is not None else None
+                method = None
+                if i[0] in ['top', 'bottom', 'left', 'right']:
+                    if geometry:
+                        method = self.check_geometry(list(toProcess.items()))
+                        geometry = False
+                else:
+                    method = getattr(self, f'check_{i[0]}', self.noMethod)(i)
+                packages.append(method) if method is not None else None
 
         return packages
 
+    def noMethod(self, item):
+        return None
+
     def check_size(self, item):
-        if item[1] in self.sizeOpts:
+        if item[1] in self.__sizeOpts:
             self.__dict__.update({'size': f'{item[1]}paper'})
+        elif item[1] == 'article':
+            self.__dict__.update({'size': 'article'})
         return None
 
     def check_fontSize(self, item):
@@ -100,6 +111,44 @@ class DocumentSettings(_main):
         else:
             return _package('scrextend', f'fontsize={item[1]}pt')
         return None
+
+    def check_orientation(self, item):
+        if isinstance(item[1], bool):
+            self.__dict__.update({'landscape': ('landscape' if item[1] else 'portrait')})
+        return None
+
+    def check_colors(self, item):
+        if isinstance(item[1], dict):
+            self.__dict__.update({'colors': item[1]})
+        else:
+            raise Exception('"colors" must be a dict type!')
+
+    def check_geometry(self, item):
+        postPre = '\\geometry{\n'
+        for i in item:
+            if i[0] in ['top', 'bottom', 'left', 'right']:
+                postPre += f'{i[0]}={i[1]}cm,\n'
+        return _package('geometry', postPre=postPre + '}')
+
+    def generate_TeX(self) -> str:
+        give = '\\documentclass['
+        for i in list(self.__dict__.items()):
+            if i in self.__preDocClass:
+                give += i[1] + ', '
+        give += f']{{{self.size if self.size != _key else "article"}}}'
+
+        # colour magic
+        if self.colors != _key:
+            temp = ''
+            assert isinstance(self.colors, dict)
+            for i in self.colors.items():
+                length = self.__colorLengths[len(i[1])]
+                colType = self.__colorTypes[length - 1]
+                if length == 3:
+                    colType = colType[0 if sum([1 if n > 1 else 0 for n in i[1]]) > 0 else 1]
+                give += f'\\definecolor{{{i[0]}}}{{{colType}}}{{{", ".join([str(n) for n in i[1][:length]])}}}'
+
+        return give
 
 
 class _section:
@@ -129,7 +178,8 @@ class _package:
     def __repr__(self):
         given = '\\usepackage'
         if self.additional: given += f'[{self.additional}]'
-        given += f'{{{self.name}}}'
+        given += f'{{{self.name}}}\n'
+        if self.postPre: given += f'{self.postPre}\n'
         return given + '\n'
 
 
@@ -147,6 +197,8 @@ class Document:
     def __getattr__(self, item):
         if item in self.__dict__:
             return self.__getattr__(item)
+        else:
+            return _key
 
     def generate_TeX(self, _compile: bool = True, **kwargs):
         if self.contains is []:
