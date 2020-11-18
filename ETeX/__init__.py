@@ -146,7 +146,7 @@ class DocumentSettings(_main):
             temp = ''
             assert isinstance(self.colors, dict)
             for i in self.colors.items():
-                length = self.__colorLengths[len(i[1])]
+                length = self.__colorLengths[max(1, min(len(i[1]), 4))]
                 colType = self.__colorTypes[length - 1]
                 if length == 3:
                     colType = colType[0 if sum([1 if n > 1 else 0 for n in i[1]]) > 0 else 1]
