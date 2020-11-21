@@ -1,13 +1,14 @@
 \documentclass{article}
+\usepackage{color}
 \usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{hyperref}
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
-\usepackage{textcomp}
-\usepackage{hyperref}
-\usepackage{geometry}
 \usepackage{minted}
 \usepackage{multicol}
-\usepackage{color, soul}
+\usepackage{soul}
+\usepackage{textcomp}
 \hypersetup{colorlinks,
 citecolor = blue,
 filecolor = blue,
@@ -17,7 +18,7 @@ urlcolor = blue
 \geometry{}
 
 
-\title{ETeX Documentation\\\large V0.1}
+\title{ETeX Documentation\\\large V0.0.1 pre-alpha(0x1343ea1)}
 \date{}
 \author{RosiePuddles}
 
@@ -43,19 +44,12 @@ The \verb|Document| class is the main class used in ETeX. It handles all \LaTeX\
 Document.generate_TeX(self, _compile: bool = True, **kwargs) -> str
 \end{minted}
 The \verb|generate_TeX| method is used to generate .tex files, and optionally generate .pdf files. The parameter \verb|_compile| is used to control whether or not the file is compiled once it has been generated.  You can also pass in \verb|debug=True| to the method to make the compilation silent. By default it's set to \verb|False|, resulting in a silent compilation.
-The name of the output .tex file name will be a formatted version of the value for the title given on instantiation of a new instance of the \verb|Document| class. Any of the following characters are removed:\begin{itemize}
-\item \$
-\item \%
-\item /
-\item \textbackslash
-\item .
-\end{itemize}
-Spaces are also formatted and turned into underscores. The resulting formatted filename is then used for all of the resulting output files.
+The name of the output .tex file name will be a formatted version of the value for the title given on instantiation of a new instance of the \verb|Document| class. The name is formatted to remove any of the following characters; \$, \textbackslash, /, \%. Full stops and spaces are also replaced by underscores.Spaces are also formatted and turned into underscores. The resulting formatted filename is then used for all of the resulting output files.
 \subsubsection{add method}\label{subsubsec:add_method}
 \begin{minted}[breaklines=true]{python}
 Document.add(self, item: _main) -> None
 \end{minted}
-The \verb|add| method adds items to the document. The added item must inherit from the \verb|_main| class. Only items added to the \verb|Document| class instance will be included in the final document.
+The \verb|add| method adds items to the document. If the added item does not inherit from the \verb|main| class, it will be converted into a string and treated as text. This allows for text to be added to the document without the need for the \verb|Text| class except in the case of text alignment, which will require the \verb|Text| class. Only items added to the \verb|Document| class instance will be included in the final document.
 \subsubsection{new\_section method}\label{subsubsec:new_section_method}
 \begin{minted}[breaklines=true]{python}
 Document.new_section(self, title: str, _type: int = 0) -> None
@@ -152,7 +146,7 @@ The \verb|add| method for lists adds an item to a list instance. Every item adde
 class Table(_main):
 	def __init__(self, values: list, **kwargs) -> None
 \end{minted}
-The \verb|Table| class 
+The \verb|Table| class is currently in development.
 \subsection{Group}\label{subsec:group}
 \begin{minted}[breaklines=true]{python}
 class Group(_holder):
@@ -165,6 +159,18 @@ class Columns(_holder):
 	def __init__(self, columns: int, items: list = None, unbalanced: bool = False) -> None
 \end{minted}
 The \verb|Columns| class is used to add columns to the document. It is similar to the \verb|Group| class in that it stores classes to be contained within it's formatting. Only items added to the class will be put into columns. To make the columns unbalanced, i.e. with the contents not spread out equally over all the columns, you can change the \verb|unbalanced| argument to \verb|True|.
+\section{Code Classes}\label{sec:code_classes}
+This section is for classes contained within \verb|ETeX.code|. All classes inherit from \verb|_main| unless stated otherwise.
+\subsection{Code}\label{subsec:code}
+
+\subsubsection{Languages}\label{subsubsec:languages}
+
+\subsubsection{Preinstallations and security warnings}\label{subsubsec:preinstallations_and_security_warnings}
+\verb|ETeX| uses the \verb|minted| package for code listings. This package is exceptionally good at displaying code as well as syntax highlighting along with a number of other useful features, for which functionality will be added in future versions. However, \verb|minted| uses the python package \verb|pygmentize| for colours. To be able to use this, \verb|minted| has to have access to the terminal, which has some security issues. In light of this, please be wary when compiling \LaTeX\ files from untrusted sources.\\
+Since \verb|minted| uses \verb|pygmentize| which is a python package, you will need to have a recent version of python installed, as well as having \verb|pygmentize| installed. to do this you will need to run the following:\begin{minted}[breaklines=true]{bash}
+sudo easy_install Pygments
+\end{minted}
+This will install \verb|pygmentize| to the most recent version of python you have installed and should allow you to be able to use the \verb|Code| class.
 \section{Maths Classes}\label{sec:maths_classes}
 This section is for classes contained within \verb|ETeX.maths|. All classes inherit from \verb|_main| unless stated otherwise.
 \subsection{Equation}\label{subsec:equation}

@@ -174,7 +174,7 @@ class _section:
 
 
 class _package:
-    def __init__(self, name: str, additional: str = None, postPre: str = None):
+    def __init__(self, name: str, additional: str = '', postPre: str = ''):
         self.name = name
         self.additional = additional
         self.postPre = postPre
@@ -215,14 +215,15 @@ class Document:
         tempHolding = []
         self.__preamble.sort(key=sortPackages)
         for i in range(len(self.__preamble) - 1):
+            print(self.__preamble[i].name)
             if self.__preamble[i].name == self.__preamble[i + 1].name:
-                self.__preamble[i + 1].additional += f'\n{self.__preamble[i].additional}'
-                self.__preamble[i + 1].postPre += f'\n{self.__preamble[i].postPre}'
+                self.__preamble[i + 1].additional += f'\n{self.__preamble[i].additional}' if self.__preamble[i].additional != '' else ''
+                self.__preamble[i + 1].postPre += f'\n{self.__preamble[i].postPre}' if self.__preamble[i].postPre != '' else ''
             else:
                 tempHolding.append(self.__preamble[i])
         tempHolding.append(self.__preamble[-1])
 
-        for i in self.__preamble:
+        for i in tempHolding:
             give - i.__repr__()
 
         for i in self.__preamble:
@@ -339,7 +340,7 @@ class Text(_main):
         for i in self.text:
             if isinstance(i, _tok):
                 if i.value == TT_H:
-                    packages += [_package('color, soul')]
+                    packages += [_package('color'), _package('soul')]
                     break
         # if '\\text{' in self.text: packages += [_package('asmath')]
         super().__init__(packages)
