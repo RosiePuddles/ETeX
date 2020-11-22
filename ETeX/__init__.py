@@ -66,95 +66,6 @@ class out:
         return self.given
 
 
-class DocumentSettings(_main):
-    __preDocClass = ['size', 'portrait', 'fontSize']
-    __sizeOpts = ['a4', 'a5', 'b5', 'executive', 'legal', 'letter']
-    __colorLengths = [0, 1, 1, 3, 4]
-    __colorTypes = ['gray', '', ('RGB', 'rgb'), 'cmyk']
-
-    def __init__(self, **kwargs):
-        packages = self.__checkSettings(kwargs)
-        super().__init__(packages)
-
-    def __getattr__(self, item):
-        if item in self.__dict__:
-            return item
-        else:
-            return _key
-
-    def __checkSettings(self, toProcess) -> list:
-        packages = []
-        geometry = True
-        for i in list(toProcess.items()):
-            if i[0] in DocSettingsOpt:
-                method = None
-                if i[0] in ['top', 'bottom', 'left', 'right']:
-                    if geometry:
-                        method = self.check_geometry(list(toProcess.items()))
-                        geometry = False
-                else:
-                    method = getattr(self, f'check_{i[0]}', self.noMethod)(i)
-                packages.append(method) if method is not None else None
-
-        return packages
-
-    def noMethod(self, item):
-        return None
-
-    def check_size(self, item):
-        if item[1] in self.__sizeOpts:
-            self.__dict__.update({'size': f'{item[1]}paper'})
-        elif item[1] == 'article':
-            self.__dict__.update({'size': 'article'})
-        return None
-
-    def check_fontSize(self, item):
-        item = (item[0], max(min(int(item[1]), 100), 1))
-        if item[1] in [10, 11, 12]:
-            self.__dict__.update({'fontSize': item[1]})
-        else:
-            return _package('scrextend', f'fontsize={item[1]}pt')
-        return None
-
-    def check_orientation(self, item):
-        if isinstance(item[1], bool):
-            self.__dict__.update({'landscape': ('landscape' if item[1] else 'portrait')})
-        return None
-
-    def check_colors(self, item):
-        if isinstance(item[1], dict):
-            self.__dict__.update({'colors': item[1]})
-        else:
-            raise Exception('"colors" must be a dict type!')
-
-    def check_geometry(self, item):
-        postPre = '\\geometry{\n'
-        for i in item:
-            if i[0] in ['top', 'bottom', 'left', 'right']:
-                postPre += f'{i[0]}={i[1]}cm,\n'
-        return _package('geometry', postPre=postPre + '}')
-
-    def generate_TeX(self) -> str:
-        give = '\\documentclass['
-        for i in list(self.__dict__.items()):
-            if i in self.__preDocClass:
-                give += i[1] + ', '
-        give += f']{{{self.size if self.size != _key else "article"}}}'
-
-        # colour magic
-        if self.colors != _key:
-            temp = ''
-            assert isinstance(self.colors, dict)
-            for i in self.colors.items():
-                length = self.__colorLengths[max(1, min(len(i[1]), 4))]
-                colType = self.__colorTypes[length - 1]
-                if length == 3:
-                    colType = colType[0 if sum([1 if n > 1 else 0 for n in i[1]]) > 0 else 1]
-                give += f'\\definecolor{{{i[0]}}}{{{colType}}}{{{", ".join([str(n) for n in i[1][:length]])}}}'
-
-        return give
-
-
 class _section:
     def __init__(self, title: str, label: str, _type: int):
         self.title = title
@@ -194,7 +105,7 @@ class Document:
         self.left = f'{left}cm' if left else None
         self.right = f'{right}cm' if right else None
         self.contains = []
-        self.__preamble = [_package('fontenc', 'T1'), _package('inputenc', 'utf8'), _package('lmodern'), _package('textcomp'), _package('hyperref', postPre='\\hypersetup{colorlinks,\ncitecolor = blue,\nfilecolor = blue,\nlinkcolor = blue,\nurlcolor = blue\n}\n'), _package('geometry')]
+        self.__preamble = [_package('fontenc', 'T1'), _package('inputenc', 'utf8'), _package('lmodern'), _package('textcomp'), _package('hyperref', postPre='\\hypersetup{colorlinks,\ncitecolor = blue,\nfilecolor = blue,\nlinkcolor = blue,\nurlcolor = blue\n}\n')]
         self.headings = [[], [], [], []]
 
     def __getattr__(self, item):
@@ -215,7 +126,6 @@ class Document:
         tempHolding = []
         self.__preamble.sort(key=sortPackages)
         for i in range(len(self.__preamble) - 1):
-            print(self.__preamble[i].name)
             if self.__preamble[i].name == self.__preamble[i + 1].name:
                 self.__preamble[i + 1].additional += f'\n{self.__preamble[i].additional}' if self.__preamble[i].additional != '' else ''
                 self.__preamble[i + 1].postPre += f'\n{self.__preamble[i].postPre}' if self.__preamble[i].postPre != '' else ''

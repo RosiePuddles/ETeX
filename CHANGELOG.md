@@ -7,6 +7,7 @@
 **Implemented enhancements:**
 
 - Text \text{} check [\#8](https://github.com/RosiePuddles/ETeX/issues/8)
+- New line for text class [\#7](https://github.com/RosiePuddles/ETeX/issues/7)
 - Add unique section labels [\#3](https://github.com/RosiePuddles/ETeX/issues/3)
 
 **Fixed bugs:**

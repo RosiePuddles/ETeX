@@ -164,6 +164,9 @@ This section is for classes contained within \verb|ETeX.code|. All classes inher
 \subsection{Code}\label{subsec:code}
 
 \subsubsection{Languages}\label{subsubsec:languages}
+As stated in the documentation for \verb|minted|, over 300 different languages are supported. To view an exhaustive list of all optional languages, run:\begin{minted}[breaklines=true]{bash}
+$ pygmentize -L lexers
+\end{minted}
 
 \subsubsection{Preinstallations and security warnings}\label{subsubsec:preinstallations_and_security_warnings}
 \verb|ETeX| uses the \verb|minted| package for code listings. This package is exceptionally good at displaying code as well as syntax highlighting along with a number of other useful features, for which functionality will be added in future versions. However, \verb|minted| uses the python package \verb|pygmentize| for colours. To be able to use this, \verb|minted| has to have access to the terminal, which has some security issues. In light of this, please be wary when compiling \LaTeX\ files from untrusted sources.\\

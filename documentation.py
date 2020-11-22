@@ -177,6 +177,8 @@ doc.add('This section is for classes contained within \\verb|ETeX.code|. All cla
 ############################################################
 doc.new_section(title='Code', _type=1)
 doc.new_section(title='Languages', _type=2)
+doc.add('As stated in the documentation for \\verb|minted|, over 300 different languages are supported. To view an exhaustive list of all optional languages, run:')
+doc.add(Code('$ pygmentize -L lexers', language='bash'))
 doc.new_section(title='Preinstallations and security warnings', _type=2)
 doc.add('\\verb|ETeX| uses the \\verb|minted| package for code listings. This package is exceptionally good at displaying code as well as syntax '
         'highlighting along with a number of other useful features, for which functionality will be added in future versions. However, \\verb|minted| '
