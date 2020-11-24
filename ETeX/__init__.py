@@ -1,7 +1,7 @@
 import os
 from secrets import token_urlsafe as key
 
-__all__ = ['Document', 'Text', 'Footnote', 'Columns', 'Equation', 'List', 'Table', 'Group', 'line', 'Code', 'Chemical', 'ChemEquation']
+__all__ = ['Document', 'DocumentSettings', 'Text', 'Footnote', 'Columns', 'Equation', 'List', 'Table', 'Group', 'line', 'Code', 'Chemical', 'ChemEquation']
 
 list_types = {'numbered': 'enumerate', 'bullet': 'itemize'}
 TT_B = 'bold'  # *
@@ -10,7 +10,7 @@ TT_H = 'highlight'  # ~
 TT_U = 'underline'  # ~~
 tokenStarts = {TT_B: '\\textbf{', TT_I: '\\textit{', TT_H: '\\hl{', TT_U: '\\underline{'}
 headings = ['empty', 'plain', 'headings', 'myheadings', 'fancy']
-DocSettingsOpt = ['size', 'fontSize', 'top', 'bottom', 'left', 'right', 'colors', 'portrait']
+DocSettingsOpt = ['type', 'size', 'fontSize', 'top', 'bottom', 'left', 'right', 'colors', 'portrait', 'leftEqn', 'leftEqnNum', 'twoColumns']
 _key = key(20)
 
 
@@ -20,7 +20,7 @@ def sortPackages(e):
 
 class _main:
     def __init__(self, Packages: list = None):
-        self.packages = Packages if Packages else [None]
+        self.packages = Packages if Packages else []
 
     def __getattr__(self, item):
         if item in self.__dict__:
@@ -53,7 +53,7 @@ class out:
         self.given = ''
 
     def __add__(self, other):
-        if not isinstance(other[0], type(None)):
+        if not other[0] == _key:
             self.given += f'{other[1]}{other[0]}{other[2]}'
         else:
             self.given = self.given
@@ -67,12 +67,14 @@ class out:
 
 
 class DocumentSettings(_main):
-    __preDocClass = ['size', 'portrait', 'fontSize']
+    __typeOpts = ['article', 'IEEEtran', 'proc', 'minimal', 'report', 'book', 'slides', 'memoir', 'letter', 'beamer']
+    __preDocClass = ['size', 'portrait', 'fontSize', 'fleqn', 'leqno', 'twocolumn']
     __sizeOpts = ['a4', 'a5', 'b5', 'executive', 'legal', 'letter']
     __colorLengths = [0, 1, 1, 3, 4]
     __colorTypes = ['gray', '', ('RGB', 'rgb'), 'cmyk']
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
+        self.__dict__.update({'type': 'article'})
         packages = self.__checkSettings(kwargs)
         super().__init__(packages)
 
@@ -101,6 +103,10 @@ class DocumentSettings(_main):
     def noMethod(self, item):
         return None
 
+    def check_type(self, item):
+        if item[1] in self.__typeOpts:
+            self.__dict__.update({item[0]: item[1]})
+
     def check_size(self, item):
         if item[1] in self.__sizeOpts:
             self.__dict__.update({'size': f'{item[1]}paper'})
@@ -118,41 +124,67 @@ class DocumentSettings(_main):
 
     def check_orientation(self, item):
         if isinstance(item[1], bool):
-            self.__dict__.update({'landscape': ('landscape' if item[1] else 'portrait')})
+            self.__dict__.update({'landscape': (True if item[1] else False)})
         return None
+
+    def check_leftEqn(self, item):
+        if isinstance(item[1], bool):
+            if item[1]:
+                self.__dict__.update({'fleqn': True})
+        else:
+            raise Warning('"leftEqn" must be a bool type')
+
+    def check_leftEqnNum(self, item):
+        if isinstance(item[1], bool):
+            if item[1]:
+                self.__dict__.update({'leqno': True})
+        else:
+            raise Warning('"leftEqnNum" must be a bool type')
+
+    def check_twoColumns(self, item):
+        if isinstance(item[1], bool):
+            if item[1]:
+                self.__dict__.update({'twocolumn': True})
+        else:
+            raise Warning('"twoColumns" must be a bool type')
 
     def check_colors(self, item):
         if isinstance(item[1], dict):
             self.__dict__.update({'colors': item[1]})
-        else:
-            raise Exception('"colors" must be a dict type!')
-
-    def check_geometry(self, item):
-        postPre = '\\geometry{\n'
-        for i in item:
-            if i[0] in ['top', 'bottom', 'left', 'right']:
-                postPre += f'{i[0]}={i[1]}cm,\n'
-        return _package('geometry', postPre=postPre + '}')
-
-    def generate_TeX(self) -> str:
-        give = '\\documentclass['
-        for i in list(self.__dict__.items()):
-            if i in self.__preDocClass:
-                give += i[1] + ', '
-        give += f']{{{self.size if self.size != _key else "article"}}}'
-
-        # colour magic
-        if self.colors != _key:
             temp = ''
-            assert isinstance(self.colors, dict)
             for i in self.colors.items():
                 length = self.__colorLengths[max(1, min(len(i[1]), 4))]
                 colType = self.__colorTypes[length - 1]
                 if length == 3:
                     colType = colType[0 if sum([1 if n > 1 else 0 for n in i[1]]) > 0 else 1]
-                give += f'\\definecolor{{{i[0]}}}{{{colType}}}{{{", ".join([str(n) for n in i[1][:length]])}}}'
+                temp += f'\\definecolor{{{i[0]}}}{{{colType}}}{{{", ".join([str(n) for n in i[1][:length]])}}},\n'
+            temp = temp[:-2]
+            return _package('xcolor', postPre=temp)
+        else:
+            raise Exception('"colors" must be a dict type!')
+
+    def check_geometry(self, item):
+        postPre = '\\geometry{'
+        for i in item:
+            if i[0] in ['top', 'bottom', 'left', 'right']:
+                postPre += f'{i[0]}={i[1]}cm,\n'
+        return _package('geometry', postPre=f'{postPre}}}')
+
+    def docType(self) -> str:
+        give = '\\documentclass['
+        for i, n in list(self.__dict__.items()):
+            if i in self.__preDocClass:
+                if n: give += i
+        if give[-1] == '[':
+            give = give[:-1]
+        else:
+            give = give[:-1] + ']'
+        give += f'{{{self.type}}}\n'
 
         return give
+
+    def __repr__(self):
+        return '\n'.join([f'{"{:<20}".format(n[0])[:20]} | {n[1]}' for n in list(self.__dict__.items())])
 
 
 class _section:
@@ -179,6 +211,12 @@ class _package:
         self.additional = additional
         self.postPre = postPre
 
+    def print(self):
+        given = '-' * 30 + '\npackageName: \"' + '{:<15}'.format(self.name)[:15] + '\"'
+        if self.additional: given += f'\n    Additional: \"{self.additional}\"'
+        if self.postPre: given += f'\n   PostPre : \"{self.postPre}\"\n'
+        return given
+
     def __repr__(self):
         given = '\\usepackage'
         if self.additional: given += f'[{self.additional}]'
@@ -187,12 +225,8 @@ class _package:
 
 
 class Document:
-    def __init__(self, top: int = None, bottom: int = None, left: int = None, right: int = None, **kwargs):
+    def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
-        self.top = f'{top}cm' if top else None
-        self.bottom = f'{bottom}cm' if bottom else None
-        self.left = f'{left}cm' if left else None
-        self.right = f'{right}cm' if right else None
         self.contains = []
         self.__preamble = [_package('fontenc', 'T1'), _package('inputenc', 'utf8'), _package('lmodern'), _package('textcomp'), _package('hyperref', postPre='\\hypersetup{colorlinks,\ncitecolor = blue,\nfilecolor = blue,\nlinkcolor = blue,\nurlcolor = blue\n}\n')]
         self.headings = [[], [], [], []]
@@ -200,12 +234,16 @@ class Document:
     def __getattr__(self, item):
         if item in self.__dict__:
             return self.__getattr__(item)
+        else: return _key
 
     def generate_TeX(self, _compile: bool = True, **kwargs):
         if self.contains is []:
             raise Exception("Nothing to generate in the file!")
+        if self.settings == _key:
+            self.settings = DocumentSettings()
         give = out()
-        give - '\\documentclass{article}\n'
+        give - self.settings.docType()
+        self.__preamble.extend(self.settings.packages)
 
         for i in self.contains:
             for n in i.packages:
@@ -225,15 +263,8 @@ class Document:
         for i in tempHolding:
             give - i.__repr__()
 
-        for i in self.__preamble:
+        for i in tempHolding:
             if i.postPre: give - i.postPre
-
-        give - '\\geometry{'
-        give += (self.top, '\ntop=', ',')
-        give += (self.bottom, '\nbottom=', ',')
-        give += (self.left, '\nleft=', ',')
-        give += (self.right, '\nright=', ',')
-        give - '}\n\n'
 
         temp = None
         if self.title:
@@ -272,8 +303,8 @@ class Document:
             command += ' >/dev/null' if silent else ''
             os.system(command)
             os.system(f'pdf{command}')
-        temp = temp.replace(" ", "\ ")
-        os.system(f'open ./{temp}.pdf')
+            temp = temp.replace(" ", "\ ")
+            os.system(f'open ./{temp}.pdf')
 
     def add(self, item):
         if not isinstance(item, _main):
