@@ -1,0 +1,78 @@
+DocumentSettings: class
+  values {
+    type: str{
+      % Type of document %
+      options{
+        >article,
+        IEEEtran,
+        proc,
+        minimal,
+        report,
+        book,
+        slides,
+        memoir,
+        letter,
+        beamer
+      }
+    }
+    ?size: str{
+      % Paper size of the document %
+      options{
+        a4,
+        a5,
+        b5,
+        executive,
+        legal,
+        letterpaper
+      }
+    }
+    ?fontSize: int <1, 100>{
+      % Changes the default font size of the document %
+    }
+    ?top: int or float <0, >{
+      % Top margin in cm %
+    }
+    ?bottom: int or float <0, >{
+      % Bottom margin in cm %
+    }
+    ?left: int or float <0, >{
+      % Left margin in cm %
+    }
+    ?right: int or float <0, >{
+      % right margin in cm %
+    }
+    ?colors: dict{
+      % Dictionary of user defined colours %
+      general{
+        [name]: *[value]
+      }
+    }
+    ?portrait: bool{
+      % Boolean to decide the orientation of the document %
+    }
+    ?leftEqn: bool{
+      % Boolean to decide whether equations should be left justified, True, or not, False %
+    }
+    ?lueftEqnNum: bool{
+      % Boolean to decide the positioning of the equation number left, True, or right, False %
+    }
+    ?twoColumns: bool{
+      % Boolean to decide if the document should have 1, False, or 2, True, columns by default %
+    }
+  }
+
+header: class
+  contains
+    left: list [2]
+    center: list [2]
+    right: list [2]
+  line width
+  ?line style?
+
+footer: class
+  contains
+    left: list [2]
+    center: list [2]
+    right: list [2]
+  line width
+  ?line style?

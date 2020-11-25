@@ -1,7 +1,8 @@
 from ETeX import *
 from datetime import date
 
-doc = Document(title='ETeX Documentation', subtitle=f'V0.0.1 pre-alpha({hex(int(date.today().strftime("%Y%m%d")))})', author='RosiePuddles', contents=True)
+docSettings = DocumentSettings(left=3, right=3, bottom=4)
+doc = Document(title='ETeX Documentation', subtitle=f'V0.0.1 pre-alpha({hex(int(date.today().strftime("%Y%m%d")))})', author='RosiePuddles', contents=True, settings=docSettings)
 doc.new_section(title='Preface')
 doc.add(Text('This package is designed to allow the user to generate \\LaTeX\\ files and associated pdf files in a more user friendly way. '
              'Please note, however, this package is still currently heavily in development, and things will go wrong. Any bugs can be reported on '
@@ -56,6 +57,45 @@ doc.add(Table([[Text('{\\verb|_type|}'), Text('Section type'), Text('Label')],
 doc.add(Text('Each section is also generated with a label based off of the \\verb|_type| and \\verb|title| arguments. The beginning of this label can be seen in the table above. A formatted '
              'name will then follow. This formatting makes the name lowercase and replaces spaces with underscores, and removes the \\textbackslash\\ character. No two labels are the same. If '
              'there is a second occurrence of a section with the same name and type, a suffix of \\verb|001| will be added. If there is another occurrence, \\verb|002| will be added, and so on.'))
+
+############################################################
+# Todo: DOCUMENTSETTINGS
+############################################################
+doc.new_section(title='DocumentSettings', _type=1)
+doc.add(Code('class DocumentSettings:\n\tdef __init__(self, *args, **kwargs) -> None', language='python'))
+doc.add('The \\verb|DocumentSettings| class is used for customising the general format of the document. It allows for a large variety of different document types. To format a document, an instance of this class should be'
+        ' passed into the instance of the \\verb|Document| class that the formatting should be applied to as the \\verb|settings| argument. The possible options for this class are listed below:')
+doc.add(List(list_type='bullet', items=[
+    Group(items=['\\verb|type: str|\/This sets the type of the document. This can be any of the following:',
+                 Columns(columns=2, items=[List(list_type='bullet', items=['article', 'IEEEtran', 'proc', 'minimal', 'report', 'book', 'slides', 'memoir', 'letter', 'beamer'])]),
+                 'If no value is stated, article is assumed.']),
+    Group(items=['\\verb|size: str|\/This sets the page size of the document. It can be any of the following:',
+                 Columns(columns=2, items=[List(list_type='bullet', items=['a4', 'a5', 'b5', 'executive', 'legal', 'letter'])]),
+                 'If no value is stated, this will be left blank and the default will be chosen by \\LaTeX.']),
+    '\\verb|colors: dict|\/This is the option to assign custom colours for use throughout the document. To assign a colour, the key for each item in the dictionary is the name '
+    'of the colour, and the value of the item is the colour of the newly defined colour. For information on how to define colours, see \\autoref{subsubsec:colours}.',
+    '\\verb|fontSize: int|\/This sets the default font size of the document. Headings of all types are scaled appropriately. This can be any value in the range of 1 to 100 inclusive.',
+    '\\verb|portrait: bool|\/This, if set to \\verb|True|, will change the orientation of the document to landscape.',
+    '\\verb|leftEqn: bool|\/This, if set to \\verb|True|, will align all equations to the left.',
+    '\\verb|leftEqnNum: bool|\/This, if set to \\verb|True|, will make all numbering for equations be on the left hand side of the page.',
+    '\\verb|twoColumns: bool|\/This, if set to \\verb|True|, will make the entire document be in two columns.',
+    Group(items=['Margins:\/To alter the margins of the document, you can use the following options:', List(list_type='bullet', items=[
+        '\\verb|top: int or float|',
+        '\\verb|bottom: int or float|',
+        '\\verb|left: int or float|',
+        '\\verb|right: int or float|'
+    ]), 'Each of the options set the margins of the document to the given value in cm\'s.'])
+]))
+doc.new_section(title='Colours', _type=2)
+doc.add('When adding a colour, the value of the item in the \\verb|colors| dictionary must be a tuple or list with \\verb|int|s or \\verb|float|s in it. The amount, and potentially format, of the values will determine '
+        'the type of colour used. The following table shows the amount of values and their corresponding colour types:')
+doc.add(Table([[Text('Amount of values'), Text('Colour type')],
+               [Text('1 or 2'), Text('Greyscale')],
+               [Text('3'), Text('RGB(0-1 or 0-255)')],
+               [Text('4 or more'), Text('CMYK')]]))
+doc.add('For the greyscale option, the value should be between 0 and 1. If two values are given the first value is always taken. For the CMYK option, the values should be between 0 and 1. Similarly to the greyscale option, '
+        'if more than 4 values are given, only the first 4 are used. For the RGB option, if all values given are between 0 and 1, then RGB 0-1 will be used; otherwise RGB 0-255 will be used. The maximum expected value for the '
+        'RGB option should between 0 and at most 255.')
 
 ############################################################
 # Todo: _MAIN
@@ -118,7 +158,7 @@ doc.add(Text('ETeX also supports new lines. The characters \\textbackslash// wil
 #   LATEX COMMANDS
 doc.new_section(title='Extra formatting', _type=2)
 doc.add(Text('Within the text environment regular \\LaTeX\\ commands can be used. Some useful examples are given below:'))
-doc.add(List(list_type='bullet', items=[Text('{\\textbackslash}verb$\\mid${foo}$\\mid$ produces text in a code-like font as seen below:\/\\verb|foo|'),
+doc.add(List(list_type='bullet', items=[Text('{\\textbackslash}verb$\\mid${foo}$\\mid$ produces text in a monospaced font as seen below:\/\\verb|foo|'),
                                         Text('\\$\\\\The \\$ character allows you to write inline maths equations such as the example below:\/'
                                              '\\$2x+y\\^{}3=-1\\$ $\\rightarrow\\ 2x+y^3=-1$')]))
 doc.add(Text('For more advanced commands, a basic understanding of \\LaTeX\\ is required.'))
@@ -254,7 +294,7 @@ doc.add(List(list_type='bullet', items=[Text('\\verb|domain: tuple|\\\\This cont
                                              'It must be a tuple with two values in in ascending order, for example '
                                              '\\verb|(1,5)|.'),
                                         Text('\\verb|color: str|\\\\This sets the colour of the plot. this colour must either be'
-                                             ' native to \\LaTeX\\ or defined in the \\verb|DocumentSettings| class\\footnote{Soon to be added}.')]))
+                                             ' native to \\LaTeX\\ or defined in the \\verb|DocumentSettings| class.')]))
 
 ############################################################
 # Todo: COORDINATES

@@ -9,16 +9,17 @@
 \usepackage{multicol}
 \usepackage{soul}
 \usepackage{textcomp}
-\hypersetup{colorlinks,
+\geometry{left=3cm,
+right=3cm,
+bottom=4cm,
+}\hypersetup{colorlinks,
 citecolor = blue,
 filecolor = blue,
 linkcolor = blue,
 urlcolor = blue
 }
-\geometry{}
 
-
-\title{ETeX Documentation\\\large V0.0.1 pre-alpha(0x1343ea1)}
+\title{ETeX Documentation\\\large V0.0.1 pre-alpha(0x1343ea5)}
 \date{}
 \author{RosiePuddles}
 
@@ -67,6 +68,71 @@ The \verb|new_section| method is used to add a new section to a \verb|Document| 
 \end{tabular}
 \end{center}
 Each section is also generated with a label based off of the \verb|_type| and \verb|title| arguments. The beginning of this label can be seen in the table above. A formatted name will then follow. This formatting makes the name lowercase and replaces spaces with underscores, and removes the \textbackslash\ character. No two labels are the same. If there is a second occurrence of a section with the same name and type, a suffix of \verb|001| will be added. If there is another occurrence, \verb|002| will be added, and so on.
+\subsection{DocumentSettings}\label{subsec:documentsettings}
+\begin{minted}[breaklines=true]{python}
+class DocumentSettings:
+	def __init__(self, *args, **kwargs) -> None
+\end{minted}
+The \verb|DocumentSettings| class is used for customising the general format of the document. It allows for a large variety of different document types. To format a document, an instance of this class should be passed into the instance of the \verb|Document| class that the formatting should be applied to as the \verb|settings| argument. The possible options for this class are listed below:\begin{itemize}
+\item \verb|type: str|\\
+This sets the type of the document. This can be any of the following:\begin{multicols}{2}\begin{itemize}
+\item article
+\item IEEEtran
+\item proc
+\item minimal
+\item report
+\item book
+\item slides
+\item memoir
+\item letter
+\item beamer
+\end{itemize}
+\end{multicols}If no value is stated, article is assumed.
+\item \verb|size: str|\\
+This sets the page size of the document. It can be any of the following:\begin{multicols}{2}\begin{itemize}
+\item a4
+\item a5
+\item b5
+\item executive
+\item legal
+\item letter
+\end{itemize}
+\end{multicols}If no value is stated, this will be left blank and the default will be chosen by \LaTeX.
+\item \verb|colors: dict|\\
+This is the option to assign custom colours for use throughout the document. To assign a colour, the key for each item in the dictionary is the name of the colour, and the value of the item is the colour of the newly defined colour. For information on how to define colours, see \autoref{subsubsec:colours}.
+\item \verb|fontSize: int|\\
+This sets the default font size of the document. Headings of all types are scaled appropriately. This can be any value in the range of 1 to 100 inclusive.
+\item \verb|portrait: bool|\\
+This, if set to \verb|True|, will change the orientation of the document to landscape.
+\item \verb|leftEqn: bool|\\
+This, if set to \verb|True|, will align all equations to the left.
+\item \verb|leftEqnNum: bool|\\
+This, if set to \verb|True|, will make all numbering for equations be on the left hand side of the page.
+\item \verb|twoColumns: bool|\\
+This, if set to \verb|True|, will make the entire document be in two columns.
+\item Margins:\\
+To alter the margins of the document, you can use the following options:\begin{itemize}
+\item \verb|top: int or float|
+\item \verb|bottom: int or float|
+\item \verb|left: int or float|
+\item \verb|right: int or float|
+\end{itemize}
+Each of the options set the margins of the document to the given value in cm's.
+\end{itemize}
+
+\subsubsection{Colours}\label{subsubsec:colours}
+When adding a colour, the value of the item in the \verb|colors| dictionary must be a tuple or list with \verb|int|s or \verb|float|s in it. The amount, and potentially format, of the values will determine the type of colour used. The following table shows the amount of values and their corresponding colour types:
+\begin{center}
+\begin{tabular}{| c | c |}
+\hline
+Amount of values & Colour type \\ \hline
+1 or 2 & Greyscale \\
+3 & RGB(0-1 or 0-255) \\
+4 or more & CMYK \\
+\hline
+\end{tabular}
+\end{center}
+For the greyscale option, the value should be between 0 and 1. If two values are given the first value is always taken. For the CMYK option, the values should be between 0 and 1. Similarly to the greyscale option, if more than 4 values are given, only the first 4 are used. For the RGB option, if all values given are between 0 and 1, then RGB 0-1 will be used; otherwise RGB 0-255 will be used. The maximum expected value for the RGB option should between 0 and at most 255.
 \subsection{\_main}\label{subsec:_main}
 The \verb|_main| class is the base class for mostly all classes the user interfaces with and provides several important methods and alterations to base methods.
 \subsubsection{Child classes}\label{subsubsec:child_classes}
@@ -125,7 +191,7 @@ ETeX also supports new lines. The characters \textbackslash/ will create a new l
  \textbf{Please note} that normally in Python, to type a \textbackslash, you would have to type \verb|\\|. However, for a new line, you only need to type \verb|\|\verb|/| since it's not a formatting character in Python.
 \subsubsection{Extra formatting}\label{subsubsec:extra_formatting}
 Within the text environment regular \LaTeX\ commands can be used. Some useful examples are given below:\begin{itemize}
-\item {\textbackslash}verb$\mid${foo}$\mid$ produces text in a code-like font as seen below:\\
+\item {\textbackslash}verb$\mid${foo}$\mid$ produces text in a monospaced font as seen below:\\
 \verb|foo|
 \item \$\\The \$ character allows you to write inline maths equations such as the example below:\\
 \$2x+y\^{}3=-1\$ $\rightarrow\ 2x+y^3=-1$
@@ -224,7 +290,7 @@ class Plot(_main)
 \end{minted}
 The \verb|Plot| class is used for plotting mathematically defined functions. These then have to be added to an \verb|Axis| class to be displayed. The class has several options for the presentation of the function, which are listed below:\begin{itemize}
 \item \verb|domain: tuple|\\This controls the domain of the function. It must be a tuple with two values in in ascending order, for example \verb|(1,5)|.
-\item \verb|color: str|\\This sets the colour of the plot. this colour must either be native to \LaTeX\ or defined in the \verb|DocumentSettings| class\footnote{Soon to be added}.
+\item \verb|color: str|\\This sets the colour of the plot. this colour must either be native to \LaTeX\ or defined in the \verb|DocumentSettings| class.
 \end{itemize}
 
 \subsection{Coordinates}\label{subsec:coordinates}

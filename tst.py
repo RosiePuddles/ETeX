@@ -1,4 +1,5 @@
 from ETeX import DocumentSettings
 
-test = DocumentSettings(colors={'test': (2, 2, 1, 4, 9, 6)})
-print(test.generate_TeX())
+test = DocumentSettings(type='letter', leftEqn=True, colors={'a': (1, 2, 3), 'b': (5, 5, 5, 9)})
+print(test)
+print(test.docType())

@@ -1,7 +1,7 @@
 import os
 from secrets import token_urlsafe as key
 
-__all__ = ['Document', 'Text', 'Footnote', 'Columns', 'Equation', 'List', 'Table', 'Group', 'line', 'Code', 'Chemical', 'ChemEquation']
+__all__ = ['Document', 'DocumentSettings', 'Text', 'Footnote', 'Columns', 'Equation', 'List', 'Table', 'Group', 'line', 'Code', 'Chemical', 'ChemEquation']
 
 list_types = {'numbered': 'enumerate', 'bullet': 'itemize'}
 TT_B = 'bold'  # *
@@ -10,7 +10,7 @@ TT_H = 'highlight'  # ~
 TT_U = 'underline'  # ~~
 tokenStarts = {TT_B: '\\textbf{', TT_I: '\\textit{', TT_H: '\\hl{', TT_U: '\\underline{'}
 headings = ['empty', 'plain', 'headings', 'myheadings', 'fancy']
-DocSettingsOpt = ['size', 'fontSize', 'top', 'bottom', 'left', 'right', 'colors', 'portrait']
+DocSettingsOpt = ['type', 'size', 'fontSize', 'top', 'bottom', 'left', 'right', 'colors', 'portrait', 'leftEqn', 'leftEqnNum', 'twoColumns']
 _key = key(20)
 
 
@@ -20,7 +20,7 @@ def sortPackages(e):
 
 class _main:
     def __init__(self, Packages: list = None):
-        self.packages = Packages if Packages else [None]
+        self.packages = Packages if Packages else []
 
     def __getattr__(self, item):
         if item in self.__dict__:
@@ -53,7 +53,7 @@ class out:
         self.given = ''
 
     def __add__(self, other):
-        if not isinstance(other[0], type(None)):
+        if not other[0] == _key:
             self.given += f'{other[1]}{other[0]}{other[2]}'
         else:
             self.given = self.given
@@ -64,6 +64,130 @@ class out:
 
     def __repr__(self):
         return self.given
+
+
+class DocumentSettings(_main):
+    __typeOpts = ['article', 'IEEEtran', 'proc', 'minimal', 'report', 'book', 'slides', 'memoir', 'letter', 'beamer']
+    __preDocClass = ['size', 'portrait', 'fontSize', 'fleqn', 'leqno', 'twocolumn']
+    __sizeOpts = ['a4', 'a5', 'b5', 'executive', 'legal', 'letter']
+    __colorLengths = [0, 1, 1, 3, 4]
+    __colorTypes = ['gray', '', ('RGB', 'rgb'), 'cmyk']
+
+    def __init__(self, *args, **kwargs) -> None:
+        self.__dict__.update({'type': 'article'})
+        packages = self.__checkSettings(kwargs)
+        super().__init__(packages)
+
+    def __getattr__(self, item):
+        if item in self.__dict__:
+            return item
+        else:
+            return _key
+
+    def __checkSettings(self, toProcess) -> list:
+        packages = []
+        geometry = True
+        for i in list(toProcess.items()):
+            if i[0] in DocSettingsOpt:
+                method = None
+                if i[0] in ['top', 'bottom', 'left', 'right']:
+                    if geometry:
+                        method = self.check_geometry(list(toProcess.items()))
+                        geometry = False
+                else:
+                    method = getattr(self, f'check_{i[0]}', self.noMethod)(i)
+                packages.append(method) if method is not None else None
+
+        return packages
+
+    def noMethod(self, item) -> None:
+        return None
+
+    def check_type(self, item) -> None:
+        if item[1] in self.__typeOpts:
+            self.__dict__.update({item[0]: item[1]})
+
+    def check_size(self, item) -> None:
+        if item[1] in self.__sizeOpts:
+            self.__dict__.update({'size': f'{item[1]}paper'})
+        elif item[1] == 'article':
+            self.__dict__.update({'size': 'article'})
+        return None
+
+    def check_fontSize(self, item):
+        item = (item[0], max(min(int(item[1]), 100), 1))
+        if item[1] in [10, 11, 12]:
+            self.__dict__.update({'fontSize': item[1]})
+        else:
+            return _package('scrextend', f'fontsize={item[1]}pt')
+        return None
+
+    def check_orientation(self, item) -> None:
+        if isinstance(item[1], bool):
+            self.__dict__.update({'landscape': (True if item[1] else False)})
+        return None
+
+    def check_leftEqn(self, item) -> None:
+        if isinstance(item[1], bool):
+            if item[1]:
+                self.__dict__.update({'fleqn': True})
+        else:
+            raise Warning('"leftEqn" must be a bool type')
+        return None
+
+    def check_leftEqnNum(self, item) -> None:
+        if isinstance(item[1], bool):
+            if item[1]:
+                self.__dict__.update({'leqno': True})
+        else:
+            raise Warning('"leftEqnNum" must be a bool type')
+        return None
+
+    def check_twoColumns(self, item) -> None:
+        if isinstance(item[1], bool):
+            if item[1]:
+                self.__dict__.update({'twocolumn': True})
+        else:
+            raise Warning('"twoColumns" must be a bool type')
+        return None
+
+    def check_colors(self, item):
+        if isinstance(item[1], dict):
+            self.__dict__.update({'colors': item[1]})
+            temp = ''
+            for i in self.colors.items():
+                length = self.__colorLengths[max(1, min(len(i[1]), 4))]
+                colType = self.__colorTypes[length - 1]
+                if length == 3:
+                    colType = colType[0 if sum([1 if n > 1 else 0 for n in i[1]]) > 0 else 1]
+                temp += f'\\definecolor{{{i[0]}}}{{{colType}}}{{{", ".join([str(n) for n in i[1][:length]])}}},\n'
+            temp = temp[:-2]
+            return _package('xcolor', postPre=temp)
+        else:
+            raise Exception('"colors" must be a dict type!')
+
+    def check_geometry(self, item):
+        postPre = '\\geometry{'
+        for i in item:
+            if i[0] in ['top', 'bottom', 'left', 'right']:
+                postPre += f'{i[0]}={i[1]}cm,\n'
+        return _package('geometry', postPre=f'{postPre}}}')
+
+    def docType(self) -> str:
+        give = '\\documentclass['
+        for i, n in list(self.__dict__.items()):
+            if i in self.__preDocClass:
+                if n: give += i
+        if give[-1] == '[':
+            give = give[:-1]
+        else:
+            give = give[:-1] + ']'
+        give += f'{{{self.type}}}\n'
+
+        return give
+
+    def __repr__(self):
+        return '\n'.join([f'{"{:<20}".format(n[0])[:20]} | {n[1]}' for n in list(self.__dict__.items())])
 
 
 class _section:
@@ -90,6 +214,12 @@ class _package:
         self.additional = additional
         self.postPre = postPre
 
+    def print(self):
+        given = '-' * 30 + '\npackageName: \"' + '{:<15}'.format(self.name)[:15] + '\"'
+        if self.additional: given += f'\n    Additional: \"{self.additional}\"'
+        if self.postPre: given += f'\n   PostPre : \"{self.postPre}\"\n'
+        return given
+
     def __repr__(self):
         given = '\\usepackage'
         if self.additional: given += f'[{self.additional}]'
@@ -98,12 +228,9 @@ class _package:
 
 
 class Document:
-    def __init__(self, top: int = None, bottom: int = None, left: int = None, right: int = None, **kwargs):
+    def __init__(self, *args, **kwargs):
+        self.__dict__.update({'settings': DocumentSettings()})
         self.__dict__.update(kwargs)
-        self.top = f'{top}cm' if top else None
-        self.bottom = f'{bottom}cm' if bottom else None
-        self.left = f'{left}cm' if left else None
-        self.right = f'{right}cm' if right else None
         self.contains = []
         self.__preamble = [_package('fontenc', 'T1'), _package('inputenc', 'utf8'), _package('lmodern'), _package('textcomp'), _package('hyperref', postPre='\\hypersetup{colorlinks,\ncitecolor = blue,\nfilecolor = blue,\nlinkcolor = blue,\nurlcolor = blue\n}\n')]
         self.headings = [[], [], [], []]
@@ -111,12 +238,14 @@ class Document:
     def __getattr__(self, item):
         if item in self.__dict__:
             return self.__getattr__(item)
+        else: return _key
 
     def generate_TeX(self, _compile: bool = True, **kwargs):
         if self.contains is []:
             raise Exception("Nothing to generate in the file!")
         give = out()
-        give - '\\documentclass{article}\n'
+        give - self.settings.docType()
+        self.__preamble.extend(self.settings.packages)
 
         for i in self.contains:
             for n in i.packages:
@@ -136,15 +265,8 @@ class Document:
         for i in tempHolding:
             give - i.__repr__()
 
-        for i in self.__preamble:
+        for i in tempHolding:
             if i.postPre: give - i.postPre
-
-        give - '\\geometry{'
-        give += (self.top, '\ntop=', ',')
-        give += (self.bottom, '\nbottom=', ',')
-        give += (self.left, '\nleft=', ',')
-        give += (self.right, '\nright=', ',')
-        give - '}\n\n'
 
         temp = None
         if self.title:
@@ -175,7 +297,7 @@ class Document:
         katex = katex.write(give.__repr__())
 
         if _compile:
-            command = f'latex -shell-escape -jobname=\"{temp}\" \"{temp}.tex\"'
+            command = f'latex {"-shell-escape" if "minted" in [n.name for n in self.__preamble] else ""} -jobname=\"{temp}\" \"{temp}.tex\"'
             silent = True
             if 'debug' in kwargs:
                 if kwargs['debug'] is True:
@@ -183,8 +305,8 @@ class Document:
             command += ' >/dev/null' if silent else ''
             os.system(command)
             os.system(f'pdf{command}')
-        temp = temp.replace(" ", "\ ")
-        os.system(f'open ./{temp}.pdf')
+            temp = temp.replace(" ", "\ ")
+            os.system(f'open ./{temp}.pdf')
 
     def add(self, item):
         if not isinstance(item, _main):
