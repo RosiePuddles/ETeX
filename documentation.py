@@ -72,6 +72,8 @@ doc.add(List(list_type='bullet', items=[
     Group(items=['\\verb|size: str|\/This sets the page size of the document. It can be any of the following:',
                  Columns(columns=2, items=[List(list_type='bullet', items=['a4', 'a5', 'b5', 'executive', 'legal', 'letter'])]),
                  'If no value is stated, this will be left blank and the default will be chosen by \\LaTeX.']),
+    '\\verb|colors: dict|\/This is the option to assign custom colours for use throughout the document. To assign a colour, the key for each item in the dictionary is the name '
+    'of the colour, and the value of the item is the colour of the newly defined colour. For information on how to define colours, see \\autoref{subsubsec:colours}.',
     '\\verb|fontSize: int|\/This sets the default font size of the document. Headings of all types are scaled appropriately. This can be any value in the range of 1 to 100 inclusive.',
     '\\verb|portrait: bool|\/This, if set to \\verb|True|, will change the orientation of the document to landscape.',
     '\\verb|leftEqn: bool|\/This, if set to \\verb|True|, will align all equations to the left.',
@@ -84,6 +86,16 @@ doc.add(List(list_type='bullet', items=[
         '\\verb|right: int or float|'
     ]), 'Each of the options set the margins of the document to the given value in cm\'s.'])
 ]))
+doc.new_section(title='Colours', _type=2)
+doc.add('When adding a colour, the value of the item in the \\verb|colors| dictionary must be a tuple or list with \\verb|int|s or \\verb|float|s in it. The amount, and potentially format, of the values will determine '
+        'the type of colour used. The following table shows the amount of values and their corresponding colour types:')
+doc.add(Table([[Text('Amount of values'), Text('Colour type')],
+               [Text('1 or 2'), Text('Greyscale')],
+               [Text('3'), Text('RGB(0-1 or 0-255)')],
+               [Text('4 or more'), Text('CMYK')]]))
+doc.add('For the greyscale option, the value should be between 0 and 1. If two values are given the first value is always taken. For the CMYK option, the values should be between 0 and 1. Similarly to the greyscale option, '
+        'if more than 4 values are given, only the first 4 are used. For the RGB option, if all values given are between 0 and 1, then RGB 0-1 will be used; otherwise RGB 0-255 will be used. The maximum expected value for the '
+        'RGB option should between 0 and at most 255.')
 
 ############################################################
 # Todo: _MAIN

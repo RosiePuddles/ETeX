@@ -19,7 +19,7 @@ linkcolor = blue,
 urlcolor = blue
 }
 
-\title{ETeX Documentation\\\large V0.0.1 pre-alpha(0x1343ea4)}
+\title{ETeX Documentation\\\large V0.0.1 pre-alpha(0x1343ea5)}
 \date{}
 \author{RosiePuddles}
 
@@ -98,6 +98,8 @@ This sets the page size of the document. It can be any of the following:\begin{m
 \item letter
 \end{itemize}
 \end{multicols}If no value is stated, this will be left blank and the default will be chosen by \LaTeX.
+\item \verb|colors: dict|\\
+This is the option to assign custom colours for use throughout the document. To assign a colour, the key for each item in the dictionary is the name of the colour, and the value of the item is the colour of the newly defined colour. For information on how to define colours, see \autoref{subsubsec:colours}.
 \item \verb|fontSize: int|\\
 This sets the default font size of the document. Headings of all types are scaled appropriately. This can be any value in the range of 1 to 100 inclusive.
 \item \verb|portrait: bool|\\
@@ -118,6 +120,19 @@ To alter the margins of the document, you can use the following options:\begin{i
 Each of the options set the margins of the document to the given value in cm's.
 \end{itemize}
 
+\subsubsection{Colours}\label{subsubsec:colours}
+When adding a colour, the value of the item in the \verb|colors| dictionary must be a tuple or list with \verb|int|s or \verb|float|s in it. The amount, and potentially format, of the values will determine the type of colour used. The following table shows the amount of values and their corresponding colour types:
+\begin{center}
+\begin{tabular}{| c | c |}
+\hline
+Amount of values & Colour type \\ \hline
+1 or 2 & Greyscale \\
+3 & RGB(0-1 or 0-255) \\
+4 or more & CMYK \\
+\hline
+\end{tabular}
+\end{center}
+For the greyscale option, the value should be between 0 and 1. If two values are given the first value is always taken. For the CMYK option, the values should be between 0 and 1. Similarly to the greyscale option, if more than 4 values are given, only the first 4 are used. For the RGB option, if all values given are between 0 and 1, then RGB 0-1 will be used; otherwise RGB 0-255 will be used. The maximum expected value for the RGB option should between 0 and at most 255.
 \subsection{\_main}\label{subsec:_main}
 The \verb|_main| class is the base class for mostly all classes the user interfaces with and provides several important methods and alterations to base methods.
 \subsubsection{Child classes}\label{subsubsec:child_classes}

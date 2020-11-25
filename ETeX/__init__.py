@@ -73,7 +73,7 @@ class DocumentSettings(_main):
     __colorLengths = [0, 1, 1, 3, 4]
     __colorTypes = ['gray', '', ('RGB', 'rgb'), 'cmyk']
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         self.__dict__.update({'type': 'article'})
         packages = self.__checkSettings(kwargs)
         super().__init__(packages)
@@ -100,14 +100,14 @@ class DocumentSettings(_main):
 
         return packages
 
-    def noMethod(self, item):
+    def noMethod(self, item) -> None:
         return None
 
-    def check_type(self, item):
+    def check_type(self, item) -> None:
         if item[1] in self.__typeOpts:
             self.__dict__.update({item[0]: item[1]})
 
-    def check_size(self, item):
+    def check_size(self, item) -> None:
         if item[1] in self.__sizeOpts:
             self.__dict__.update({'size': f'{item[1]}paper'})
         elif item[1] == 'article':
@@ -122,31 +122,34 @@ class DocumentSettings(_main):
             return _package('scrextend', f'fontsize={item[1]}pt')
         return None
 
-    def check_orientation(self, item):
+    def check_orientation(self, item) -> None:
         if isinstance(item[1], bool):
             self.__dict__.update({'landscape': (True if item[1] else False)})
         return None
 
-    def check_leftEqn(self, item):
+    def check_leftEqn(self, item) -> None:
         if isinstance(item[1], bool):
             if item[1]:
                 self.__dict__.update({'fleqn': True})
         else:
             raise Warning('"leftEqn" must be a bool type')
+        return None
 
-    def check_leftEqnNum(self, item):
+    def check_leftEqnNum(self, item) -> None:
         if isinstance(item[1], bool):
             if item[1]:
                 self.__dict__.update({'leqno': True})
         else:
             raise Warning('"leftEqnNum" must be a bool type')
+        return None
 
-    def check_twoColumns(self, item):
+    def check_twoColumns(self, item) -> None:
         if isinstance(item[1], bool):
             if item[1]:
                 self.__dict__.update({'twocolumn': True})
         else:
             raise Warning('"twoColumns" must be a bool type')
+        return None
 
     def check_colors(self, item):
         if isinstance(item[1], dict):
@@ -225,7 +228,8 @@ class _package:
 
 
 class Document:
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
+        self.__dict__.update({'settings': DocumentSettings()})
         self.__dict__.update(kwargs)
         self.contains = []
         self.__preamble = [_package('fontenc', 'T1'), _package('inputenc', 'utf8'), _package('lmodern'), _package('textcomp'), _package('hyperref', postPre='\\hypersetup{colorlinks,\ncitecolor = blue,\nfilecolor = blue,\nlinkcolor = blue,\nurlcolor = blue\n}\n')]
@@ -239,8 +243,6 @@ class Document:
     def generate_TeX(self, _compile: bool = True, **kwargs):
         if self.contains is []:
             raise Exception("Nothing to generate in the file!")
-        if self.settings == _key:
-            self.settings = DocumentSettings()
         give = out()
         give - self.settings.docType()
         self.__preamble.extend(self.settings.packages)
@@ -295,7 +297,7 @@ class Document:
         katex = katex.write(give.__repr__())
 
         if _compile:
-            command = f'latex -shell-escape -jobname=\"{temp}\" \"{temp}.tex\"'
+            command = f'latex {"-shell-escape" if "minted" in [n.name for n in self.__preamble] else ""} -jobname=\"{temp}\" \"{temp}.tex\"'
             silent = True
             if 'debug' in kwargs:
                 if kwargs['debug'] is True:
